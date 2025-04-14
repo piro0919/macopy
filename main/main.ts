@@ -10,8 +10,9 @@ import {
   ipcMain,
 } from "electron";
 import * as path from "path";
+const Store = require("@streamhue/electron-store");
 
-const Store = require("electron-store").default;
+const store = new Store();
 const applescript = require("applescript");
 
 type HistoryItem =
@@ -21,7 +22,6 @@ const history: HistoryItem[] = [];
 let tray: null | Tray = null;
 let win: BrowserWindow | null = null;
 let lastActiveApp = "";
-const store = new Store();
 let showTrayIcon = store.get("showTrayIcon", true);
 
 const WIDTH = 250;
