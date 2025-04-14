@@ -36,7 +36,8 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-use-measure": "2.1.7",
-    "ress": "5.0.2"
+    "ress": "5.0.2",
+    "uiohook-napi": "1.5.4"
   },
   "description": "",
   "devDependencies": {
@@ -128,5 +129,5 @@
     "type-check": "tsc --noEmit",
     "zip": "ditto -c -k --sequesterRsrc --keepParent \"dist/mac-arm64/Macopy.app\" \"dist/Macopy-${npm_package_version}-mac.zip\""
   },
-  "version": "0.0.1"
+  "version": "0.0.3"
 }

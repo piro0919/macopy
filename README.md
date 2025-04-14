@@ -1,16 +1,16 @@
 # <img src="./assets/trayTemplate.png" alt="App icon" width="32" style="vertical-align: middle; margin-right: 8px;" /> Macopy
 
-> A minimal clipboard history tool for macOS with global shortcut support, tray control, and paste automation.
+> A minimal clipboard history tool for macOS — inspired by Clipy, optimized for speed and simplicity.
 
 ---
 
-**Macopy** is a simple and efficient clipboard manager tailored for macOS. Designed with focus on minimal UI and fast keyboard operation, Macopy helps you:
+**Macopy** is a fast, lightweight clipboard manager built specifically for macOS. Inspired by the simplicity of Clipy, Macopy strips away complexity to deliver just what you need:
 
-- 📋 Track recent clipboard items (text and image)
-- ⚡️ Quickly paste from history using a global shortcut
-- 🧠 Automatically detect the frontmost app and simulate paste
-- 🧭 Tray icon for history access and setting control
-- 💾 Remembers window size between launches
+- 📋 Capture recent clipboard items (text and images)
+- ⚡️ Paste instantly with a global shortcut
+- 🧠 Detect the active application and simulate paste automatically
+- 🧭 Access history and settings from the tray
+- 💾 Remembers window size and settings across sessions
 
 ---
 
@@ -66,4 +66,5 @@ MIT — Contributions welcome!
 
 ## 🙌 Credits
 
-Built with ❤️ using [Electron](https://www.electronjs.org/), [TypeScript](https://www.typescriptlang.org/), and AppleScript integration.
+Built with ❤️ using [Electron](https://www.electronjs.org/), [TypeScript](https://www.typescriptlang.org/), and AppleScript integration.  
+Heavily inspired by [Clipy](https://github.com/Clipy/Clipy) — thank you!

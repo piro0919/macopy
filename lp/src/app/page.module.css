@@ -1,0 +1,116 @@
+.page {
+  background: #f9f9f9;
+  color: #1a1a1a;
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.main {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon {
+  border-radius: 8px;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  margin-top: 8px;
+  color: #555;
+}
+
+.cta {
+  display: flex;
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.button {
+  background: #000;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: background 0.2s ease;
+
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.button:hover {
+  background: #333;
+}
+
+.section {
+  margin-top: 64px;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.featureItem {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.featureTitleRow {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.featureItem h3 {
+  margin-top: 0;
+  font-size: 1.125rem;
+}
+
+.screenshotRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 32px;
+  margin-top: 48px;
+}
+
+.screenshotText {
+  flex: 1;
+  min-width: 280px;
+}
+
+.screenshotImage {
+  flex: 1;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #ddd;
+  max-width: 100%;
+  height: auto;
+}
+
+.footer {
+  margin-top: 64px;
+  font-size: 0.875rem;
+  color: #888;
+  text-align: center;
+}

@@ -10,10 +10,24 @@ import {
   ipcMain,
 } from "electron";
 import * as path from "path";
-const Store = require("@streamhue/electron-store");
+import { uIOhook } from "uiohook-napi";
 
-const store = new Store();
 const applescript = require("applescript");
+const Store = require("@streamhue/electron-store");
+const store = new Store();
+
+const gotLock = app.requestSingleInstanceLock();
+
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
+}
 
 type HistoryItem =
   | { type: "text"; content: string }
@@ -47,7 +61,9 @@ function registerShortcut(shortcut: string) {
       }
     );
 
-    updateClipboard();
+    const isJapanese = app.getLocale().startsWith("ja");
+
+    updateClipboard(isJapanese);
     win?.webContents.send("clipboard-history", history);
 
     const cursor = screen.getCursorScreenPoint();
@@ -101,6 +117,7 @@ function createPopupWindow() {
 }
 
 function createTray() {
+  const isJapanese = app.getLocale().startsWith("ja");
   const iconPath = path.join(__dirname, "trayTemplate.png");
   const icon = nativeImage.createFromPath(iconPath);
 
@@ -144,7 +161,7 @@ function createTray() {
       })),
       { type: "separator" },
       {
-        label: "ショートカット設定",
+        label: isJapanese ? "ショートカット設定" : "Shortcut Settings",
         submenu: shortcutOptions.map((opt) => ({
           label: opt.label,
           type: "radio",
@@ -158,7 +175,7 @@ function createTray() {
         })),
       },
       {
-        label: "ログイン時に自動起動",
+        label: isJapanese ? "ログイン時に自動起動" : "Launch at Login",
         type: "checkbox",
         checked: openAtLogin,
         click: (menuItem) => {
@@ -169,12 +186,12 @@ function createTray() {
           }
         },
       },
-      { label: "Macopy を終了", role: "quit" },
+      { label: isJapanese ? "Macopy を終了" : "Quit Macopy", role: "quit" },
     ])
   );
 }
 
-function updateClipboard() {
+function updateClipboard(isJapanese: boolean) {
   const text = clipboard.readText();
   const image = clipboard.readImage();
 
@@ -193,6 +210,7 @@ function updateClipboard() {
   if (history.length > 10) history.pop();
 
   if (tray) {
+    const isJapanese = app.getLocale().startsWith("ja");
     tray.setContextMenu(
       Menu.buildFromTemplate([
         ...history.slice(0, 10).map((item, i) => ({
@@ -230,7 +248,7 @@ function updateClipboard() {
         })),
         { type: "separator" },
         {
-          label: "ショートカット設定",
+          label: isJapanese ? "ショートカット設定" : "Shortcut Settings",
           submenu: shortcutOptions.map((opt) => ({
             label: opt.label,
             type: "radio",
@@ -244,7 +262,7 @@ function updateClipboard() {
           })),
         },
         {
-          label: "ログイン時に自動起動",
+          label: isJapanese ? "ログイン時に自動起動" : "Launch at Login",
           type: "checkbox",
           checked: openAtLogin,
           click: (menuItem) => {
@@ -255,10 +273,31 @@ function updateClipboard() {
             }
           },
         },
-        { label: "Macopy を終了", role: "quit" },
+        { label: isJapanese ? "Macopy を終了" : "Quit Macopy", role: "quit" },
       ])
     );
   }
+}
+
+function setupGlobalClickListener() {
+  uIOhook.on("mousedown", () => {
+    if (!win) return;
+
+    const cursor = screen.getCursorScreenPoint();
+    const bounds = win.getBounds();
+
+    const isInside =
+      cursor.x >= bounds.x &&
+      cursor.x <= bounds.x + bounds.width &&
+      cursor.y >= bounds.y &&
+      cursor.y <= bounds.y + bounds.height;
+
+    if (!isInside) {
+      win.hide();
+    }
+  });
+
+  uIOhook.start();
 }
 
 ipcMain.on("hide-window", () => {
@@ -322,6 +361,7 @@ app.whenReady().then(() => {
   registerShortcut(currentShortcut);
 
   setInterval(updateClipboard, 1000); // 定期ポーリング
+  setupGlobalClickListener();
 });
 
 app.on("will-quit", () => {
