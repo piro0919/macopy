@@ -1,0 +1,131 @@
+{
+  "author": "piro <piro.haniwa@gmail.com> (https://kk-web.link/)",
+  "bugs": {
+    "url": "https://github.com/piro0919/macopy/issues"
+  },
+  "build": {
+    "appId": "com.example.macopy",
+    "asar": true,
+    "files": [
+      "dist",
+      "!dist/mac-arm64",
+      "main",
+      "index.html",
+      "package.json",
+      "!**/*.map",
+      "!**/test/**",
+      "!**/tests/**",
+      "!**/*.md",
+      "!**/example/**",
+      "!node_modules/.cache"
+    ],
+    "mac": {
+      "icon": "assets/icon.icns",
+      "target": [
+        "dir",
+        "zip"
+      ]
+    },
+    "productName": "Macopy"
+  },
+  "dependencies": {
+    "applescript": "1.0.0",
+    "electron-store": "10.0.1",
+    "electron-updater": "6.6.2",
+    "ms": "2.1.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-use-measure": "2.1.7",
+    "ress": "5.0.2"
+  },
+  "description": "",
+  "devDependencies": {
+    "@commitlint/cli": "19.8.0",
+    "@commitlint/config-conventional": "19.8.0",
+    "@eslint/compat": "1.2.7",
+    "@eslint/eslintrc": "^3",
+    "@eslint/js": "9.23.0",
+    "@secretlint/secretlint-rule-preset-recommend": "9.2.0",
+    "@types/node": "20.17.30",
+    "@types/react": "19.1.0",
+    "@types/react-dom": "19.1.2",
+    "@typescript-eslint/eslint-plugin": "8.28.0",
+    "@typescript-eslint/parser": "8.28.0",
+    "@uphold/commitlint-config": "1.1.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "concurrently": "9.1.2",
+    "dotenv-cli": "8.0.0",
+    "electron": "35.1.5",
+    "electron-builder": "26.0.12",
+    "eslint": "^9",
+    "eslint-config-prettier": "10.1.1",
+    "eslint-plugin-css": "0.11.0",
+    "eslint-plugin-css-modules": "2.12.0",
+    "eslint-plugin-ext": "0.1.0",
+    "eslint-plugin-filenames": "1.3.2",
+    "eslint-plugin-import": "2.31.0",
+    "eslint-plugin-no-unsanitized": "4.1.2",
+    "eslint-plugin-perfectionist": "4.10.1",
+    "eslint-plugin-promise": "7.2.1",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "eslint-plugin-security": "3.0.1",
+    "eslint-plugin-unused-imports": "4.1.4",
+    "eslint-plugin-write-good-comments": "0.2.0",
+    "lefthook": "1.11.5",
+    "prettier": "3.5.3",
+    "secretlint": "9.2.0",
+    "stylelint": "16.17.0",
+    "stylelint-config-css-modules": "4.4.0",
+    "stylelint-config-recommended": "15.0.0",
+    "stylelint-css-modules-no-global-scoped-selector": "1.0.2",
+    "stylelint-declaration-block-no-ignored-properties": "2.8.0",
+    "stylelint-high-performance-animation": "1.11.0",
+    "stylelint-no-unused-selectors": "1.0.40",
+    "stylelint-order": "6.0.4",
+    "ts-node": "10.9.2",
+    "typescript": "5.8.3",
+    "vite": "6.2.5",
+    "wait-on": "8.0.3"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "main": "dist/main.js",
+  "name": "macopy",
+  "overrides": {
+    "stylelint-css-modules-no-global-scoped-selector": {
+      "stylelint": "16.17.0"
+    },
+    "stylelint-no-unused-selectors": {
+      "stylelint": "16.17.0"
+    }
+  },
+  "productName": "Macopy",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/piro0919/macopy.git"
+  },
+  "scripts": {
+    "build": "vite build --sourcemap false && npm run build-main && electron-builder --publish never",
+    "build-main": "tsc main/main.ts --outDir dist",
+    "codesign": "codesign --deep --force --sign - 'dist/mac-arm64/Macopy.app'",
+    "dev": "npm run start",
+    "dev:lp": "npm --prefix lp run dev",
+    "electron": "npm run build-main && electron .",
+    "generate-icon": "bash scripts/generate-icon.sh",
+    "lint": "npx eslint",
+    "lint:fix": "npx eslint --fix",
+    "lint:style": "stylelint --fix '**/*.css'",
+    "postbuild": "npm run strip-bloat && npm run codesign && npm run zip && rm -f dist/*-arm64-mac.zip",
+    "prebuild": "npm run generate-icon",
+    "prettier": "prettier --write .",
+    "release": "npm run release:create && npm run release:upload",
+    "release:create": "gh release create v$npm_package_version -t \"Release v$npm_package_version\" --generate-notes",
+    "release:upload": "gh release upload v$npm_package_version \"dist/Macopy-$npm_package_version-mac.zip\" \"dist/latest-mac.yml\" --clobber",
+    "start": "concurrently \"vite\" \"wait-on http://localhost:5173 && npm run electron\"",
+    "strip-bloat": "bash scripts/strip-electron-bloat.sh",
+    "type-check": "tsc --noEmit",
+    "zip": "ditto -c -k --sequesterRsrc --keepParent \"dist/mac-arm64/Macopy.app\" \"dist/Macopy-${npm_package_version}-mac.zip\""
+  },
+  "version": "0.0.1"
+}
