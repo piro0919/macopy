@@ -11,6 +11,7 @@ const App = () => {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [trayVisible, setTrayVisible] = useState<boolean>(true);
   const [ref, bounds] = useMeasure();
+  const isJapanese = navigator.language.startsWith("ja");
 
   useEffect(() => {
     (window as any).macopy.onHistory((data: HistoryItem[]) => {
@@ -121,7 +122,13 @@ const App = () => {
           setSelectedIndex(-1);
         }}
       >
-        {trayVisible ? "メニューバーから非表示" : "メニューバーに表示"}
+        {isJapanese
+          ? trayVisible
+            ? "メニューバーから非表示"
+            : "メニューバーに表示"
+          : trayVisible
+            ? "Hide from menu bar"
+            : "Show in menu bar"}
       </div>
       <div
         className={`${styles.item} ${styles.close}`}
@@ -132,7 +139,7 @@ const App = () => {
           setSelectedIndex(-1);
         }}
       >
-        Macopy を終了
+        {isJapanese ? "Macopy を終了" : "Quit Macopy"}
       </div>
     </main>
   );

@@ -158,6 +158,7 @@ export default function Page(): React.JSX.Element {
               height={320}
               alt="Clipboard screenshot"
               className={styles.screenshotImage}
+              quality={100}
             />
           </motion.div>
 
@@ -174,6 +175,7 @@ export default function Page(): React.JSX.Element {
               height={320}
               alt="Tray menu screenshot"
               className={styles.screenshotImage}
+              quality={100}
             />
             <div className={styles.screenshotText}>
               <h3>Tray Access</h3>

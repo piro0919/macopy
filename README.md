@@ -46,6 +46,17 @@ npm run start
 
 ---
 
+## 📸 Preview
+
+<table align="center">
+  <tr>
+    <td><img src="./assets/screenshot1.png" alt="Clipboard screenshot" width="300" /></td>
+    <td><img src="./assets/screenshot2.png" alt="Tray menu screenshot" width="300" /></td>
+  </tr>
+</table>
+
+---
+
 ## 🔐 Permissions Required (macOS)
 
 To enable full functionality, please grant the following:

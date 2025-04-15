@@ -50,6 +50,10 @@ const shortcutOptions = [
 let currentShortcut = store.get("shortcut", "Alt+V");
 let openAtLogin = app.getLoginItemSettings().openAtLogin;
 
+function checkIsJapanese(): boolean {
+  return app.getLocale().startsWith("ja");
+}
+
 function registerShortcut(shortcut: string) {
   globalShortcut.register(shortcut, () => {
     applescript.execString(
@@ -61,7 +65,7 @@ function registerShortcut(shortcut: string) {
       }
     );
 
-    const isJapanese = app.getLocale().startsWith("ja");
+    const isJapanese = checkIsJapanese();
 
     updateClipboard(isJapanese);
     win?.webContents.send("clipboard-history", history);
@@ -117,7 +121,7 @@ function createPopupWindow() {
 }
 
 function createTray() {
-  const isJapanese = app.getLocale().startsWith("ja");
+  const isJapanese = checkIsJapanese();
   const iconPath = path.join(__dirname, "trayTemplate.png");
   const icon = nativeImage.createFromPath(iconPath);
 
@@ -210,7 +214,7 @@ function updateClipboard(isJapanese: boolean) {
   if (history.length > 10) history.pop();
 
   if (tray) {
-    const isJapanese = app.getLocale().startsWith("ja");
+    const isJapanese = checkIsJapanese();
     tray.setContextMenu(
       Menu.buildFromTemplate([
         ...history.slice(0, 10).map((item, i) => ({
