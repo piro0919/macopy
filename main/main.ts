@@ -4,6 +4,7 @@ import {
   clipboard,
   globalShortcut,
   Menu,
+  MenuItemConstructorOptions,
   nativeImage,
   Tray,
   screen,
@@ -11,11 +12,17 @@ import {
 } from "electron";
 import * as path from "path";
 import { uIOhook } from "uiohook-napi";
+import * as fs from "fs";
+import { spawn } from "child_process";
+import * as readline from "readline";
+
+if (process.platform === "darwin") {
+  app.dock?.hide();
+}
 
 const applescript = require("applescript");
 const Store = require("@streamhue/electron-store");
 const store = new Store();
-
 const gotLock = app.requestSingleInstanceLock();
 
 if (!gotLock) {
@@ -120,6 +127,81 @@ function createPopupWindow() {
   win.on("blur", () => win?.hide());
 }
 
+// 新しい関数: コンテキストメニューの生成を別関数に抽出
+function buildTrayContextMenu(isJapanese: boolean): Menu {
+  const pasteScript = (app: string) => `
+    tell application "${app}"
+      activate
+    end tell
+    delay 0.05
+    tell application "System Events"
+      keystroke "v" using {command down}
+    end tell
+  `;
+
+  const historyMenuItems: MenuItemConstructorOptions[] = history
+    .slice(0, 10)
+    .map((item, i) => ({
+      label: item.type === "text" ? item.content.slice(0, 30) : "[Image]",
+      accelerator: `${i < 9 ? i + 1 : 0}`,
+      click: () => {
+        applescript.execString(
+          'tell application "System Events" to get name of first application process whose frontmost is true',
+          (err: any, result: any) => {
+            if (!err && typeof result === "string") {
+              lastActiveApp = result;
+            }
+
+            if (item.type === "text") {
+              clipboard.writeText(item.content);
+            } else {
+              const img = nativeImage.createFromDataURL(item.content);
+              clipboard.writeImage(img);
+            }
+
+            applescript.execString(pasteScript(lastActiveApp));
+          }
+        );
+      },
+    }));
+
+  const settingsMenuItems: MenuItemConstructorOptions[] = [
+    { type: "separator" as const },
+    {
+      label: isJapanese ? "ショートカット設定" : "Shortcut Settings",
+      submenu: shortcutOptions.map((opt) => ({
+        label: opt.label,
+        type: "radio" as const,
+        checked: currentShortcut === opt.value,
+        click: () => {
+          globalShortcut.unregisterAll();
+          currentShortcut = opt.value;
+          store.set("shortcut", currentShortcut);
+          registerShortcut(currentShortcut);
+        },
+      })),
+    },
+    {
+      label: isJapanese ? "ログイン時に自動起動" : "Launch at Login",
+      type: "checkbox" as const,
+      checked: openAtLogin,
+      click: (menuItem) => {
+        openAtLogin = menuItem.checked;
+        app.setLoginItemSettings({ openAtLogin });
+        if (!app.isPackaged) {
+          console.log("自動起動設定:", openAtLogin);
+        }
+      },
+    },
+    {
+      label: isJapanese ? "Macopy を終了" : "Quit Macopy",
+      role: "quit" as const,
+    },
+  ];
+
+  return Menu.buildFromTemplate([...historyMenuItems, ...settingsMenuItems]);
+}
+
 function createTray() {
   const isJapanese = checkIsJapanese();
   const iconPath = path.join(__dirname, "trayTemplate.png");
@@ -127,72 +209,7 @@ function createTray() {
 
   tray = new Tray(icon.resize({ width: 18, height: 18 }));
   tray.setToolTip("Macopy");
-
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      ...history.slice(0, 10).map((item, i) => ({
-        label: item.type === "text" ? item.content.slice(0, 30) : "[Image]",
-        accelerator: `${i < 9 ? i + 1 : 0}`,
-        click: () => {
-          applescript.execString(
-            'tell application "System Events" to get name of first application process whose frontmost is true',
-            (err: any, result: any) => {
-              if (!err && typeof result === "string") {
-                lastActiveApp = result;
-              }
-
-              if (item.type === "text") {
-                clipboard.writeText(item.content);
-              } else {
-                const img = nativeImage.createFromDataURL(item.content);
-                clipboard.writeImage(img);
-              }
-
-              const script = `
-                tell application "${lastActiveApp}"
-                  activate
-                end tell
-                delay 0.05
-                tell application "System Events"
-                  keystroke "v" using {command down}
-                end tell
-              `;
-
-              applescript.execString(script);
-            }
-          );
-        },
-      })),
-      { type: "separator" },
-      {
-        label: isJapanese ? "ショートカット設定" : "Shortcut Settings",
-        submenu: shortcutOptions.map((opt) => ({
-          label: opt.label,
-          type: "radio",
-          checked: currentShortcut === opt.value,
-          click: () => {
-            globalShortcut.unregisterAll();
-            currentShortcut = opt.value;
-            store.set("shortcut", currentShortcut);
-            registerShortcut(currentShortcut);
-          },
-        })),
-      },
-      {
-        label: isJapanese ? "ログイン時に自動起動" : "Launch at Login",
-        type: "checkbox",
-        checked: openAtLogin,
-        click: (menuItem) => {
-          openAtLogin = menuItem.checked;
-          app.setLoginItemSettings({ openAtLogin });
-          if (!app.isPackaged) {
-            console.log("自動起動設定:", openAtLogin);
-          }
-        },
-      },
-      { label: isJapanese ? "Macopy を終了" : "Quit Macopy", role: "quit" },
-    ])
-  );
+  tray.setContextMenu(buildTrayContextMenu(isJapanese));
 }
 
 function updateClipboard(isJapanese: boolean) {
@@ -213,74 +230,37 @@ function updateClipboard(isJapanese: boolean) {
 
   if (history.length > 10) history.pop();
 
+  // トレイメニューを更新
   if (tray) {
-    const isJapanese = checkIsJapanese();
-    tray.setContextMenu(
-      Menu.buildFromTemplate([
-        ...history.slice(0, 10).map((item, i) => ({
-          label: item.type === "text" ? item.content.slice(0, 30) : "[Image]",
-          accelerator: `${i < 9 ? i + 1 : 0}`,
-          click: () => {
-            applescript.execString(
-              'tell application "System Events" to get name of first application process whose frontmost is true',
-              (err: any, result: any) => {
-                if (!err && typeof result === "string") {
-                  lastActiveApp = result;
-                }
-
-                if (item.type === "text") {
-                  clipboard.writeText(item.content);
-                } else {
-                  const img = nativeImage.createFromDataURL(item.content);
-                  clipboard.writeImage(img);
-                }
-
-                const script = `
-                  tell application "${lastActiveApp}"
-                    activate
-                  end tell
-                  delay 0.05
-                  tell application "System Events"
-                    keystroke "v" using {command down}
-                  end tell
-                `;
-
-                applescript.execString(script);
-              }
-            );
-          },
-        })),
-        { type: "separator" },
-        {
-          label: isJapanese ? "ショートカット設定" : "Shortcut Settings",
-          submenu: shortcutOptions.map((opt) => ({
-            label: opt.label,
-            type: "radio",
-            checked: currentShortcut === opt.value,
-            click: () => {
-              globalShortcut.unregisterAll();
-              currentShortcut = opt.value;
-              store.set("shortcut", currentShortcut);
-              registerShortcut(currentShortcut);
-            },
-          })),
-        },
-        {
-          label: isJapanese ? "ログイン時に自動起動" : "Launch at Login",
-          type: "checkbox",
-          checked: openAtLogin,
-          click: (menuItem) => {
-            openAtLogin = menuItem.checked;
-            app.setLoginItemSettings({ openAtLogin });
-            if (!app.isPackaged) {
-              console.log("自動起動設定:", openAtLogin);
-            }
-          },
-        },
-        { label: isJapanese ? "Macopy を終了" : "Quit Macopy", role: "quit" },
-      ])
-    );
+    tray.setContextMenu(buildTrayContextMenu(isJapanese));
   }
+}
+
+function startClipboardWatcher() {
+  const watcherPath = path.join(__dirname, "clipboard-watcher");
+
+  if (!fs.existsSync(watcherPath)) {
+    console.warn("clipboard-watcher not found. Skipping clipboard monitor.");
+    return;
+  }
+
+  const proc = spawn(watcherPath);
+  const rl = readline.createInterface({ input: proc.stdout });
+
+  rl.on("line", (line) => {
+    if (line.trim() === "clipboard-changed") {
+      updateClipboard(checkIsJapanese());
+      win?.webContents.send("clipboard-history", history);
+    }
+  });
+
+  proc.stderr.on("data", (data) => {
+    console.error(`Watcher error: ${data}`);
+  });
+
+  proc.on("exit", (code) => {
+    console.warn(`clipboard-watcher exited with code ${code}`);
+  });
 }
 
 function setupGlobalClickListener() {
@@ -363,11 +343,12 @@ app.whenReady().then(() => {
   }
 
   registerShortcut(currentShortcut);
-
-  setInterval(updateClipboard, 1000); // 定期ポーリング
+  startClipboardWatcher();
   setupGlobalClickListener();
 });
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+  // uIOhookのイベントリスナーを適切に解除
+  uIOhook.stop();
 });
