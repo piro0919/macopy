@@ -20,6 +20,9 @@
       "!node_modules/.cache"
     ],
     "mac": {
+      "extendInfo": {
+        "LSUIElement": 1
+      },
       "icon": "assets/icon.icns",
       "target": [
         "dir",

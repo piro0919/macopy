@@ -21,17 +21,6 @@ const Store = require("@streamhue/electron-store");
 const store = new Store();
 const gotLock = app.requestSingleInstanceLock();
 
-if (!gotLock) {
-  app.quit();
-} else {
-  app.on("second-instance", () => {
-    if (win) {
-      if (win.isMinimized()) win.restore();
-      win.focus();
-    }
-  });
-}
-
 type HistoryItem =
   | { type: "text"; content: string }
   | { type: "image"; content: string };
@@ -126,14 +115,14 @@ function createPopupWindow() {
 // 新しい関数: コンテキストメニューの生成を別関数に抽出
 function buildTrayContextMenu(isJapanese: boolean): Menu {
   const pasteScript = (app: string) => `
-    tell application "${app}"
-      activate
-    end tell
-    delay 0.05
-    tell application "System Events"
-      keystroke "v" using {command down}
-    end tell
-  `;
+tell application "${app}"
+  activate
+end tell
+delay 0.05
+tell application "System Events"
+  keystroke "v" using {command down}
+end tell
+`;
 
   const historyMenuItems: MenuItemConstructorOptions[] = history
     .slice(0, 10)
@@ -280,12 +269,27 @@ function setupGlobalClickListener() {
   uIOhook.start();
 }
 
-ipcMain.on("hide-window", () => {
-  win?.hide();
-});
+if (!gotLock) {
+  app.quit();
+} else {
+  // macOSの場合はapp.whenReady()の前にDockを非表示にする
+  if (process.platform === "darwin") {
+    app.dock?.hide();
+  }
 
-ipcMain.on("paste-from-clipboard", () => {
-  const script = `
+  app.on("second-instance", () => {
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
+
+  ipcMain.on("hide-window", () => {
+    win?.hide();
+  });
+
+  ipcMain.on("paste-from-clipboard", () => {
+    const script = `
       tell application "${lastActiveApp}"
         activate
       end tell
@@ -295,66 +299,67 @@ ipcMain.on("paste-from-clipboard", () => {
       end tell
     `;
 
-  applescript.execString(script);
-});
+    applescript.execString(script);
+  });
 
-ipcMain.on("update-window-height", (_, height: number) => {
-  if (win && height > 0) {
-    win.setBounds({
-      ...win.getBounds(),
-      height,
-    });
-  }
-});
+  ipcMain.on("update-window-height", (_, height: number) => {
+    if (win && height > 0) {
+      win.setBounds({
+        ...win.getBounds(),
+        height,
+      });
+    }
+  });
 
-ipcMain.on("copy-image", (_, dataUrl: string) => {
-  const img = nativeImage.createFromDataURL(dataUrl);
-  clipboard.writeImage(img);
-});
+  ipcMain.on("copy-image", (_, dataUrl: string) => {
+    const img = nativeImage.createFromDataURL(dataUrl);
+    clipboard.writeImage(img);
+  });
 
-ipcMain.on("toggle-tray-icon", () => {
-  if (showTrayIcon) {
-    tray?.destroy();
-    tray = null;
-  } else {
-    createTray();
-  }
-  showTrayIcon = !showTrayIcon;
-  store.set("showTrayIcon", showTrayIcon);
-});
+  ipcMain.on("toggle-tray-icon", () => {
+    if (showTrayIcon) {
+      tray?.destroy();
+      tray = null;
+    } else {
+      createTray();
+    }
+    showTrayIcon = !showTrayIcon;
+    store.set("showTrayIcon", showTrayIcon);
+  });
 
-ipcMain.handle("get-tray-icon-state", () => {
-  return showTrayIcon;
-});
+  ipcMain.handle("get-tray-icon-state", () => {
+    return showTrayIcon;
+  });
 
-if (process.platform === "darwin") {
-  const loginItemSettings = app.getLoginItemSettings();
-  const launchedAsHidden =
-    loginItemSettings.wasOpenedAsHidden || loginItemSettings.wasOpenedAtLogin;
-
-  if (launchedAsHidden) {
-    app.dock?.hide();
-  }
-}
-
-app.whenReady().then(() => {
   if (process.platform === "darwin") {
-    app.dock?.hide();
+    const loginItemSettings = app.getLoginItemSettings();
+    const launchedAsHidden =
+      loginItemSettings.wasOpenedAsHidden || loginItemSettings.wasOpenedAtLogin;
+
+    if (launchedAsHidden) {
+      app.dock?.hide();
+    }
   }
 
-  createPopupWindow();
+  app.whenReady().then(() => {
+    if (process.platform === "darwin") {
+      app.dock?.hide();
+    }
 
-  if (showTrayIcon) {
-    createTray();
-  }
+    createPopupWindow();
 
-  registerShortcut(currentShortcut);
-  startClipboardWatcher();
-  setupGlobalClickListener();
-});
+    if (showTrayIcon) {
+      createTray();
+    }
 
-app.on("will-quit", () => {
-  globalShortcut.unregisterAll();
-  // uIOhookのイベントリスナーを適切に解除
-  uIOhook.stop();
-});
+    registerShortcut(currentShortcut);
+    startClipboardWatcher();
+    setupGlobalClickListener();
+  });
+
+  app.on("will-quit", () => {
+    globalShortcut.unregisterAll();
+    // uIOhookのイベントリスナーを適切に解除
+    uIOhook.stop();
+  });
+}
