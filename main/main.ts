@@ -16,10 +16,6 @@ import * as fs from "fs";
 import { spawn } from "child_process";
 import * as readline from "readline";
 
-if (process.platform === "darwin") {
-  app.dock?.hide();
-}
-
 const applescript = require("applescript");
 const Store = require("@streamhue/electron-store");
 const store = new Store();
@@ -330,6 +326,16 @@ ipcMain.on("toggle-tray-icon", () => {
 ipcMain.handle("get-tray-icon-state", () => {
   return showTrayIcon;
 });
+
+if (process.platform === "darwin") {
+  const loginItemSettings = app.getLoginItemSettings();
+  const launchedAsHidden =
+    loginItemSettings.wasOpenedAsHidden || loginItemSettings.wasOpenedAtLogin;
+
+  if (launchedAsHidden) {
+    app.dock?.hide();
+  }
+}
 
 app.whenReady().then(() => {
   if (process.platform === "darwin") {
