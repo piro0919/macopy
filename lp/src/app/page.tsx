@@ -196,7 +196,7 @@ export default function Page(): React.JSX.Element {
           <span>
             &copy; 2025{" "}
             <a
-              href="https://kk-web.link/"
+              href="https://kkweb.io/"
               target="_blank"
               rel="noopener noreferrer"
             >
