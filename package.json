@@ -104,7 +104,7 @@
     "productivity"
   ],
   "license": "ISC",
-  "main": "dist/main.js",
+  "main": "dist/main/main.js",
   "name": "macopy",
   "overrides": {
     "stylelint-css-modules-no-global-scoped-selector": {
@@ -121,7 +121,7 @@
   },
   "scripts": {
     "build": "vite build --sourcemap false && swiftc ClipboardWatcher.swift -o ./dist/clipboard-watcher && npm run copy-preload && npm run build-main && electron-builder --publish never",
-    "build-main": "tsc main/main.ts --outDir dist && mv dist/main/main.js dist/main.js && rm -rf dist/main",
+    "build-main": "tsc -p tsconfig.main.json",
     "codesign": "codesign --deep --force --sign - 'dist/mac-arm64/Macopy.app'",
     "copy-preload": "node scripts/copy-preload.js",
     "dev": "swiftc ClipboardWatcher.swift -o ./dist/clipboard-watcher && npm run start",

@@ -32,7 +32,7 @@ const Store = require("@streamhue/electron-store");
 const store = new Store();
 const gotLock = app.requestSingleInstanceLock();
 
-const history: HistoryItem[] = [];
+const history: HistoryItem[] = store.get("history", []);
 let tray: null | Tray = null;
 let win: BrowserWindow | null = null;
 let lastActiveApp = "";
@@ -71,7 +71,7 @@ function registerShortcut(shortcut: string) {
 
     const winBounds = win?.getBounds();
     const winWidth = POPUP_WIDTH;
-    const winHeight = winBounds?.height ?? 200;
+    const winHeight = winBounds?.height || 200;
 
     let x = cursor.x;
     let y = cursor.y;
@@ -85,7 +85,12 @@ function registerShortcut(shortcut: string) {
     }
 
     win?.setBounds({ x, y, width: winWidth, height: winHeight });
-    win?.isVisible() ? win.hide() : win?.show();
+    if (win?.isVisible()) {
+      win.hide();
+    } else {
+      win?.show();
+      win?.focus();
+    }
   });
 }
 
@@ -100,7 +105,7 @@ function createPopupWindow() {
     transparent: true,
     webPreferences: {
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "..", "preload.js"),
     },
     width: POPUP_WIDTH,
     roundedCorners: false,
@@ -109,7 +114,7 @@ function createPopupWindow() {
   const isDev = !app.isPackaged;
   const url = isDev
     ? DEV_SERVER_URL
-    : `file://${encodeURI(path.resolve(__dirname, "../dist/index.html"))}`;
+    : `file://${encodeURI(path.resolve(__dirname, "../index.html"))}`;
 
   win.loadURL(url);
   win.on("blur", () => win?.hide());
@@ -195,7 +200,7 @@ function buildTrayContextMenu(isJapanese: boolean): Menu {
 
 function createTray() {
   const isJapanese = checkIsJapanese();
-  const iconPath = path.join(__dirname, "trayTemplate.png");
+  const iconPath = path.join(__dirname, "..", "trayTemplate.png");
   const icon = nativeImage.createFromPath(iconPath);
 
   tray = new Tray(icon.resize({ width: TRAY_ICON_SIZE, height: TRAY_ICON_SIZE }));
@@ -221,6 +226,9 @@ function updateClipboard(isJapanese: boolean) {
 
   if (history.length > 10) history.pop();
 
+  // 履歴を永続化
+  store.set("history", history);
+
   // トレイメニューを更新
   if (tray) {
     tray.setContextMenu(buildTrayContextMenu(isJapanese));
@@ -228,7 +236,7 @@ function updateClipboard(isJapanese: boolean) {
 }
 
 function startClipboardWatcher() {
-  const watcherPath = path.join(__dirname, "clipboard-watcher");
+  const watcherPath = path.join(__dirname, "..", "clipboard-watcher");
 
   if (!fs.existsSync(watcherPath)) {
     console.warn("clipboard-watcher not found. Skipping clipboard monitor.");
