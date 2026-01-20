@@ -121,7 +121,7 @@
   },
   "scripts": {
     "build": "vite build --sourcemap false && swiftc ClipboardWatcher.swift -o ./dist/clipboard-watcher && npm run copy-preload && npm run build-main && electron-builder --publish never",
-    "build-main": "tsc main/main.ts --outDir dist",
+    "build-main": "tsc main/main.ts --outDir dist && mv dist/main/main.js dist/main.js && rm -rf dist/main",
     "codesign": "codesign --deep --force --sign - 'dist/mac-arm64/Macopy.app'",
     "copy-preload": "node scripts/copy-preload.js",
     "dev": "swiftc ClipboardWatcher.swift -o ./dist/clipboard-watcher && npm run start",
@@ -142,5 +142,5 @@
     "type-check": "tsc --noEmit",
     "zip": "ditto -c -k --sequesterRsrc --keepParent \"dist/mac-arm64/Macopy.app\" \"dist/Macopy-${npm_package_version}-mac.zip\""
   },
-  "version": "0.1.0"
+  "version": "0.2.0"
 }
