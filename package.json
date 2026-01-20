@@ -42,7 +42,7 @@
     "ress": "5.0.2",
     "uiohook-napi": "1.5.4"
   },
-  "description": "",
+  "description": "A lightweight and fast clipboard history manager for macOS, inspired by Clipy",
   "devDependencies": {
     "@commitlint/cli": "19.8.0",
     "@commitlint/config-conventional": "19.8.0",
@@ -92,7 +92,17 @@
     "vite": "6.2.5",
     "wait-on": "8.0.3"
   },
-  "keywords": [],
+  "keywords": [
+    "clipboard",
+    "clipboard-manager",
+    "clipboard-history",
+    "macos",
+    "electron",
+    "react",
+    "typescript",
+    "menubar",
+    "productivity"
+  ],
   "license": "ISC",
   "main": "dist/main.js",
   "name": "macopy",

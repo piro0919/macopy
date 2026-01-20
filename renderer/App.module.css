@@ -28,6 +28,13 @@
 }
 
 .item {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
   padding: 4px 8px;
   cursor: pointer;
   transition: background-color 0.1s ease-in-out;

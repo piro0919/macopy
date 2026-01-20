@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from "react";
-import styles from "./App.module.css";
+import { useEffect, useState } from "react";
 import useMeasure from "react-use-measure";
-
-type HistoryItem =
-  | { type: "text"; content: string }
-  | { type: "image"; content: string };
+import type { HistoryItem } from "../shared/types";
+import styles from "./App.module.css";
+import "./types/macopy.d.ts";
 
 const App = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -14,14 +12,14 @@ const App = () => {
   const isJapanese = navigator.language.startsWith("ja");
 
   useEffect(() => {
-    (window as any).macopy.onHistory((data: HistoryItem[]) => {
+    window.macopy.onHistory((data: HistoryItem[]) => {
       setHistory(data);
     });
   }, []);
 
   useEffect(() => {
     (async () => {
-      const result = await (window as any).macopy?.getTrayIconState?.();
+      const result = await window.macopy.getTrayIconState();
       setTrayVisible(result);
     })();
   }, []);
@@ -41,13 +39,13 @@ const App = () => {
         const item = history[selectedIndex];
         if (item.type === "text") {
           navigator.clipboard.writeText(item.content).then(() => {
-            (window as any).macopy?.hideWindow();
-            (window as any).macopy?.pasteFromClipboard();
+            window.macopy.hideWindow();
+            window.macopy.pasteFromClipboard();
           });
         } else {
-          (window as any).macopy?.copyImage?.(item.content);
-          (window as any).macopy?.hideWindow();
-          (window as any).macopy?.pasteFromClipboard();
+          window.macopy.copyImage(item.content);
+          window.macopy.hideWindow();
+          window.macopy.pasteFromClipboard();
         }
       } else if (/^[0-9]$/.test(e.key)) {
         const pressed = Number(e.key);
@@ -56,13 +54,13 @@ const App = () => {
           const item = history[index];
           if (item.type === "text") {
             navigator.clipboard.writeText(item.content).then(() => {
-              (window as any).macopy?.hideWindow();
-              (window as any).macopy?.pasteFromClipboard();
+              window.macopy.hideWindow();
+              window.macopy.pasteFromClipboard();
             });
           } else {
-            (window as any).macopy?.copyImage?.(item.content);
-            (window as any).macopy?.hideWindow();
-            (window as any).macopy?.pasteFromClipboard();
+            window.macopy.copyImage(item.content);
+            window.macopy.hideWindow();
+            window.macopy.pasteFromClipboard();
           }
         }
       }
@@ -73,54 +71,60 @@ const App = () => {
   }, [history, selectedIndex]);
 
   useEffect(() => {
-    (window as any).macopy?.updateWindowHeight?.(bounds.height);
+    window.macopy.updateWindowHeight(bounds.height);
   }, [bounds.height]);
 
   return (
     <main className={styles.root} ref={ref}>
       {history.map((item, index) => (
-        <div
+        <button
           className={`${styles.item} ${
             index === selectedIndex && selectedIndex !== -1
               ? styles.selected
               : ""
           }`}
-          key={index}
+          key={`${item.type}-${item.content.slice(0, 20)}-${index}`}
           onClick={async () => {
             if (item.type === "text") {
               await navigator.clipboard.writeText(item.content);
             } else {
-              (window as any).macopy?.copyImage?.(item.content);
+              window.macopy.copyImage(item.content);
             }
-            (window as any).macopy?.hideWindow();
-            (window as any).macopy?.pasteFromClipboard();
+            window.macopy.hideWindow();
+            window.macopy.pasteFromClipboard();
           }}
           onMouseEnter={() => {
             setSelectedIndex(index);
           }}
+          type="button"
         >
           <div>
             {item.type === "text" ? (
               <div className={styles.text}>{item.content.slice(0, 100)}</div>
             ) : (
               <div className={styles.imageContainer}>
-                <img src={item.content} className={styles.image} />
+                <img
+                  alt="Clipboard content"
+                  className={styles.image}
+                  src={item.content}
+                />
               </div>
             )}
           </div>
           <div className={styles.num}>{index < 9 ? index + 1 : 0}</div>
-        </div>
+        </button>
       ))}
       {history.length > 0 ? <hr className={styles.hr} /> : null}
-      <div
+      <button
         className={`${styles.item} ${styles.toggle}`}
         onClick={() => {
-          (window as any).macopy.toggleTrayIcon();
+          window.macopy.toggleTrayIcon();
           setTrayVisible((prev) => !prev);
         }}
         onMouseEnter={() => {
           setSelectedIndex(-1);
         }}
+        type="button"
       >
         {isJapanese
           ? trayVisible
@@ -129,8 +133,8 @@ const App = () => {
           : trayVisible
             ? "Hide from menu bar"
             : "Show in menu bar"}
-      </div>
-      <div
+      </button>
+      <button
         className={`${styles.item} ${styles.close}`}
         onClick={() => {
           window.close();
@@ -138,9 +142,10 @@ const App = () => {
         onMouseEnter={() => {
           setSelectedIndex(-1);
         }}
+        type="button"
       >
         {isJapanese ? "Macopy を終了" : "Quit Macopy"}
-      </div>
+      </button>
     </main>
   );
 };

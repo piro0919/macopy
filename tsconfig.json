@@ -16,6 +16,7 @@
   },
   "include": [
     "main",
-    "renderer"
+    "renderer",
+    "shared"
   ]
 }

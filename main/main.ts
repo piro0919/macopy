@@ -15,35 +15,38 @@ import { uIOhook } from "uiohook-napi";
 import * as fs from "fs";
 import { spawn } from "child_process";
 import * as readline from "readline";
+import type { HistoryItem } from "../shared/types";
+import {
+  DEFAULT_SHORTCUT,
+  DEV_SERVER_URL,
+  MAX_HISTORY_ITEMS,
+  PASTE_DELAY_SECONDS,
+  POPUP_HEIGHT,
+  POPUP_WIDTH,
+  SHORTCUT_OPTIONS,
+  TRAY_ICON_SIZE,
+} from "../shared/constants";
 
 const applescript = require("applescript");
 const Store = require("@streamhue/electron-store");
 const store = new Store();
 const gotLock = app.requestSingleInstanceLock();
 
-type HistoryItem =
-  | { type: "text"; content: string }
-  | { type: "image"; content: string };
 const history: HistoryItem[] = [];
 let tray: null | Tray = null;
 let win: BrowserWindow | null = null;
 let lastActiveApp = "";
 let showTrayIcon = store.get("showTrayIcon", true);
 
-const WIDTH = 250;
-const HEIGHT = 0;
-
-const shortcutOptions = [
-  { label: "⌥ Option + V", value: "Alt+V" },
-  { label: "⌘ Shift + V", value: "CommandOrControl+Shift+V" },
-  { label: "⌃ Ctrl + Option + V", value: "Control+Alt+V" },
-];
-
-let currentShortcut = store.get("shortcut", "Alt+V");
+let currentShortcut = store.get("shortcut", DEFAULT_SHORTCUT);
 let openAtLogin = app.getLoginItemSettings().openAtLogin;
 
 function checkIsJapanese(): boolean {
   return app.getLocale().startsWith("ja");
+}
+
+function escapeAppleScriptString(str: string): string {
+  return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
 function registerShortcut(shortcut: string) {
@@ -67,7 +70,7 @@ function registerShortcut(shortcut: string) {
     const bounds = display.workArea;
 
     const winBounds = win?.getBounds();
-    const winWidth = WIDTH;
+    const winWidth = POPUP_WIDTH;
     const winHeight = winBounds?.height ?? 200;
 
     let x = cursor.x;
@@ -90,7 +93,7 @@ function createPopupWindow() {
   win = new BrowserWindow({
     alwaysOnTop: true,
     frame: false,
-    height: HEIGHT,
+    height: POPUP_HEIGHT,
     resizable: false,
     show: false,
     skipTaskbar: true,
@@ -99,33 +102,36 @@ function createPopupWindow() {
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
     },
-    width: WIDTH,
+    width: POPUP_WIDTH,
     roundedCorners: false,
   });
 
   const isDev = !app.isPackaged;
   const url = isDev
-    ? "http://localhost:5173"
+    ? DEV_SERVER_URL
     : `file://${encodeURI(path.resolve(__dirname, "../dist/index.html"))}`;
 
   win.loadURL(url);
   win.on("blur", () => win?.hide());
 }
 
-// 新しい関数: コンテキストメニューの生成を別関数に抽出
-function buildTrayContextMenu(isJapanese: boolean): Menu {
-  const pasteScript = (app: string) => `
-tell application "${app}"
+function buildPasteScript(appName: string): string {
+  const escapedAppName = escapeAppleScriptString(appName);
+  return `
+tell application "${escapedAppName}"
   activate
 end tell
-delay 0.05
+delay ${PASTE_DELAY_SECONDS}
 tell application "System Events"
   keystroke "v" using {command down}
 end tell
 `;
+}
+
+function buildTrayContextMenu(isJapanese: boolean): Menu {
 
   const historyMenuItems: MenuItemConstructorOptions[] = history
-    .slice(0, 10)
+    .slice(0, MAX_HISTORY_ITEMS)
     .map((item, i) => ({
       label: item.type === "text" ? item.content.slice(0, 30) : "[Image]",
       accelerator: `${i < 9 ? i + 1 : 0}`,
@@ -144,7 +150,7 @@ end tell
               clipboard.writeImage(img);
             }
 
-            applescript.execString(pasteScript(lastActiveApp));
+            applescript.execString(buildPasteScript(lastActiveApp));
           }
         );
       },
@@ -154,7 +160,7 @@ end tell
     { type: "separator" as const },
     {
       label: isJapanese ? "ショートカット設定" : "Shortcut Settings",
-      submenu: shortcutOptions.map((opt) => ({
+      submenu: SHORTCUT_OPTIONS.map((opt) => ({
         label: opt.label,
         type: "radio" as const,
         checked: currentShortcut === opt.value,
@@ -192,7 +198,7 @@ function createTray() {
   const iconPath = path.join(__dirname, "trayTemplate.png");
   const icon = nativeImage.createFromPath(iconPath);
 
-  tray = new Tray(icon.resize({ width: 18, height: 18 }));
+  tray = new Tray(icon.resize({ width: TRAY_ICON_SIZE, height: TRAY_ICON_SIZE }));
   tray.setToolTip("Macopy");
   tray.setContextMenu(buildTrayContextMenu(isJapanese));
 }
@@ -289,17 +295,7 @@ if (!gotLock) {
   });
 
   ipcMain.on("paste-from-clipboard", () => {
-    const script = `
-      tell application "${lastActiveApp}"
-        activate
-      end tell
-      delay 0.05
-      tell application "System Events"
-        keystroke "v" using {command down}
-      end tell
-    `;
-
-    applescript.execString(script);
+    applescript.execString(buildPasteScript(lastActiveApp));
   });
 
   ipcMain.on("update-window-height", (_, height: number) => {
