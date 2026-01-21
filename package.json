@@ -84,7 +84,8 @@
     "url": "https://github.com/piro0919/macopy.git"
   },
   "scripts": {
-    "build": "tauri build",
+    "build": "tauri build && npm run codesign",
+    "codesign": "codesign --deep --force --sign - 'src/target/release/bundle/macos/Macopy.app'",
     "dev": "tauri dev",
     "dev:lp": "npm --prefix lp run dev",
     "generate-icon": "bash scripts/generate-icon.sh",
