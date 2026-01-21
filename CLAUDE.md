@@ -6,25 +6,28 @@ macOS 専用の軽量クリップボード履歴マネージャー。Clipy か�
 
 ```
 macopy/
-├── main/           # Electron メインプロセス
-│   ├── main.ts     # エントリーポイント（トレイ、グローバルショートカット、クリップボード監視）
-│   └── preload.js  # Context Isolation 用セキュリティブリッジ
-├── renderer/       # React レンダラープロセス
-│   ├── App.tsx     # メインコンポーネント（キーボード/マウス操作、IPC通信）
+├── src/            # Tauri バックエンド (Rust)
+│   ├── src/
+│   │   └── lib.rs  # メインロジック（トレイ、グローバルショートカット、クリップボード監視）
+│   ├── Cargo.toml  # Rust 依存関係
+│   └── tauri.conf.json  # Tauri 設定
+├── renderer/       # React フロントエンド
+│   ├── App.tsx     # メインコンポーネント（キーボード/マウス操作）
+│   ├── api/tauri.ts # Tauri API ブリッジ
 │   ├── index.tsx   # エントリーポイント
 │   └── *.css       # スタイル（CSS Modules）
+├── shared/         # 共通型定義
 ├── lp/             # ランディングページ（Next.js）
 ├── scripts/        # ビルド用スクリプト
-├── assets/         # アイコン、画像アセット
-└── dist/           # ビルド出力
+└── assets/         # アイコン、画像アセット
 ```
 
 ## 技術スタック
 
-- **言語**: TypeScript (strict mode)
+- **言語**: TypeScript (strict mode) + Rust
 - **フロントエンド**: React 19 + Vite
-- **デスクトップ**: Electron 35
-- **ネイティブ**: Swift (ClipboardWatcher), uiohook-napi
+- **デスクトップ**: Tauri v2
+- **ネイティブ**: Rust (cocoa/objc bindings for macOS APIs)
 - **ランディングページ**: Next.js 15 + Framer Motion
 
 ## 開発コマンド
@@ -33,30 +36,25 @@ macopy/
 # 開発サーバー起動（ホットリロード）
 npm run dev
 
-# Vite + Electron 並行実行
-npm run start
-
 # フルビルド（アプリケーションパッケージング）
 npm run build
 
-# メインプロセスのみビルド
-npm run build-main
-
-# Electron 起動
-npm run electron
+# Vite のみ起動
+npm run vite:dev
 ```
 
 ## アーキテクチャ
 
 ### IPC 通信
-- メインプロセス ↔ レンダラー間は `contextBridge` 経由で `window.macopy` API を公開
-- ホワイトリスト方式でセキュリティを確保
+- Tauri の `invoke` API でフロントエンド ↔ Rust バックエンド間を通信
+- `@tauri-apps/api` パッケージを使用
 
 ### 主要機能
-1. **クリップボード監視**: Swift/uiohook-napi でシステムレベル監視
-2. **履歴管理**: electron-store で最新10アイテムを永続化
+1. **クリップボード監視**: Rust でシステムレベル監視（macOS NSPasteboard API）
+2. **履歴管理**: Tauri の設定ストアで最新10アイテムを永続化
 3. **ペースト自動化**: AppleScript で Command+V をシミュレート
 4. **ポップアップUI**: Frameless ウィンドウでカーソル位置に表示
+5. **マルチモニター対応**: ネイティブ NSScreen API で正確な座標計算
 
 ## コーディング規約
 
@@ -71,6 +69,6 @@ npm run electron
 
 ## 注意事項
 
-- macOS 専用（ARM64 ビルド対応）
-- Node.js LTS 対応
-- Electron の Context Isolation が有効
+- macOS 専用（ARM64 / x86_64 ビルド対応）
+- Tauri v2 使用
+- macos-private-api 機能が有効（透過ウィンドウ等に必要）

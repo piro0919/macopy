@@ -191,7 +191,7 @@ export default function Page(): React.JSX.Element {
           <div>
             Compatible with macOS. Accessibility permission is required.
             <br />
-            Built with Electron, React, and ❤️
+            Built with Tauri, React, and ❤️
           </div>
           <span>
             &copy; 2025{" "}

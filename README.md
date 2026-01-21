@@ -39,7 +39,6 @@ git clone https://github.com/piro0919/macopy
 cd macopy
 npm install
 npm run build
-npm run start
 ```
 
 > On first run, macOS will ask for **Accessibility** and optionally **Screen Recording** permissions. These are required for paste automation and app detection.
@@ -77,5 +76,5 @@ MIT — Contributions welcome!
 
 ## 🙌 Credits
 
-Built with ❤️ using [Electron](https://www.electronjs.org/), [TypeScript](https://www.typescriptlang.org/), and AppleScript integration.  
+Built with ❤️ using [Tauri](https://tauri.app/), [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), and AppleScript integration.
 Heavily inspired by [Clipy](https://github.com/Clipy/Clipy) — thank you!

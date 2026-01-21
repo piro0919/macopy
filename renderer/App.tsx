@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import useMeasure from "react-use-measure";
 import type { HistoryItem } from "../shared/types";
 import styles from "./App.module.css";
-import "./types/macopy.d.ts";
+import { copyText, tauriApi } from "./api/tauri";
+
+const api = tauriApi;
 
 const App = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -12,20 +14,20 @@ const App = () => {
   const isJapanese = navigator.language.startsWith("ja");
 
   useEffect(() => {
-    window.macopy.onHistory((data: HistoryItem[]) => {
+    api.onHistory((data: HistoryItem[]) => {
       setHistory(data);
     });
   }, []);
 
   useEffect(() => {
     (async () => {
-      const result = await window.macopy.getTrayIconState();
+      const result = await api.getTrayIconState();
       setTrayVisible(result);
     })();
   }, []);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    const handler = async (e: KeyboardEvent) => {
       e.preventDefault();
       if (e.key === "ArrowUp") {
         setSelectedIndex((prev) =>
@@ -37,15 +39,14 @@ const App = () => {
         );
       } else if (e.key === "Enter") {
         const item = history[selectedIndex];
-        if (item.type === "text") {
-          navigator.clipboard.writeText(item.content).then(() => {
-            window.macopy.hideWindow();
-            window.macopy.pasteFromClipboard();
-          });
-        } else {
-          window.macopy.copyImage(item.content);
-          window.macopy.hideWindow();
-          window.macopy.pasteFromClipboard();
+        if (item) {
+          if (item.type === "text") {
+            await copyText(item.content);
+          } else {
+            api.copyImage(item.content);
+          }
+          await api.hideWindow();
+          await api.pasteFromClipboard();
         }
       } else if (/^[0-9]$/.test(e.key)) {
         const pressed = Number(e.key);
@@ -53,15 +54,12 @@ const App = () => {
         if (index < history.length) {
           const item = history[index];
           if (item.type === "text") {
-            navigator.clipboard.writeText(item.content).then(() => {
-              window.macopy.hideWindow();
-              window.macopy.pasteFromClipboard();
-            });
+            await copyText(item.content);
           } else {
-            window.macopy.copyImage(item.content);
-            window.macopy.hideWindow();
-            window.macopy.pasteFromClipboard();
+            api.copyImage(item.content);
           }
+          await api.hideWindow();
+          await api.pasteFromClipboard();
         }
       }
     };
@@ -71,8 +69,18 @@ const App = () => {
   }, [history, selectedIndex]);
 
   useEffect(() => {
-    window.macopy.updateWindowHeight(bounds.height);
+    api.updateWindowHeight(bounds.height);
   }, [bounds.height]);
+
+  const handleItemClick = async (item: HistoryItem) => {
+    if (item.type === "text") {
+      await copyText(item.content);
+    } else {
+      api.copyImage(item.content);
+    }
+    await api.hideWindow();
+    await api.pasteFromClipboard();
+  };
 
   return (
     <main className={styles.root} ref={ref}>
@@ -84,15 +92,7 @@ const App = () => {
               : ""
           }`}
           key={`${item.type}-${item.content.slice(0, 20)}-${index}`}
-          onClick={async () => {
-            if (item.type === "text") {
-              await navigator.clipboard.writeText(item.content);
-            } else {
-              window.macopy.copyImage(item.content);
-            }
-            window.macopy.hideWindow();
-            window.macopy.pasteFromClipboard();
-          }}
+          onClick={() => handleItemClick(item)}
           onMouseEnter={() => {
             setSelectedIndex(index);
           }}
@@ -118,7 +118,7 @@ const App = () => {
       <button
         className={`${styles.item} ${styles.toggle}`}
         onClick={() => {
-          window.macopy.toggleTrayIcon();
+          api.toggleTrayIcon();
           setTrayVisible((prev) => !prev);
         }}
         onMouseEnter={() => {
@@ -137,7 +137,7 @@ const App = () => {
       <button
         className={`${styles.item} ${styles.close}`}
         onClick={() => {
-          window.close();
+          api.quitApp();
         }}
         onMouseEnter={() => {
           setSelectedIndex(-1);

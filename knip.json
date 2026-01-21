@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": ["renderer/index.tsx"],
+  "project": ["renderer/**/*.{ts,tsx}", "shared/**/*.ts"],
+  "ignore": [
+    "lp/**",
+    "src/target/**",
+    "dist/**",
+    "**/*.d.ts"
+  ],
+  "ignoreDependencies": [
+    "ress",
+    "@commitlint/*",
+    "@uphold/commitlint-config",
+    "@eslint/*",
+    "@typescript-eslint/*",
+    "eslint-*",
+    "stylelint-*",
+    "secretlint",
+    "@secretlint/*",
+    "lefthook",
+    "dotenv-cli"
+  ]
+}
