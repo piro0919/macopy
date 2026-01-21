@@ -72,10 +72,10 @@
   "name": "macopy",
   "overrides": {
     "stylelint-css-modules-no-global-scoped-selector": {
-      "stylelint": "16.17.0"
+      "stylelint": "16.26.1"
     },
     "stylelint-no-unused-selectors": {
-      "stylelint": "16.17.0"
+      "stylelint": "16.26.1"
     }
   },
   "productName": "Macopy",
