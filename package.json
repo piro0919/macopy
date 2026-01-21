@@ -53,7 +53,7 @@
     "stylelint-declaration-block-no-ignored-properties": "2.8.0",
     "stylelint-high-performance-animation": "1.11.0",
     "stylelint-no-unused-selectors": "1.0.40",
-    "stylelint-order": "6.0.4",
+    "stylelint-order": "7.0.1",
     "typescript": "5.8.3",
     "vite": "6.2.5"
   },
