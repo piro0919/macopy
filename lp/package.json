@@ -2,9 +2,9 @@
   "dependencies": {
     "framer-motion": "12.7.2",
     "lucide-react": "0.488.0",
-    "next": "15.3.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "next": "15.3.8",
+    "react": "^19.1.4",
+    "react-dom": "^19.1.4",
     "ress": "5.0.2"
   },
   "devDependencies": {
@@ -13,7 +13,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.3.0",
+    "eslint-config-next": "15.3.8",
     "typescript": "^5"
   },
   "name": "macopy-lp",

@@ -148,8 +148,8 @@ export default function Page(): React.JSX.Element {
               <h3>Clipboard History</h3>
               <p>
                 Press your shortcut and instantly access your recent clipboard
-                items. Navigate with the keyboard and hit Enter to paste. It's
-                that fast.
+                items. Navigate with the keyboard and hit Enter to paste.
+                It&apos;s that fast.
               </p>
             </div>
             <Image
