@@ -5,8 +5,8 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-use-measure": "2.1.7",
     "ress": "5.0.2"
   },
