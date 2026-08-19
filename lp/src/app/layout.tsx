@@ -7,6 +7,8 @@ const description =
   "A minimal clipboard history tool for macOS — inspired by Clipy, optimized for speed and simplicity.";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://macopy.kkweb.io"),
+  alternates: { canonical: "/" },
   title,
   description,
   openGraph: {
