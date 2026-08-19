@@ -68,7 +68,7 @@
     "menubar",
     "productivity"
   ],
-  "license": "ISC",
+  "license": "MIT",
   "name": "macopy",
   "overrides": {
     "stylelint-css-modules-no-global-scoped-selector": {
