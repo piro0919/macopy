@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  /* アイコンの配色をそのまま持ってくる。クリップボードの鋼色から濃紺へ */
+  --color-steel: #3c5f7e;
+  --color-deep: #16222e;
+  --color-signal: #3f6d94;
+  --color-ink: #171a1d;
+  --color-paper: #f4f4f3;
+  --color-line: #e2e3e4;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+
+  /* 日本語を語のまとまりで折り返す。これが無いと見出しが「を、」や
+     「キ／ーボード」で割れる。対応していないブラウザでは従来どおり */
+  word-break: auto-phrase;
+}
+
+/* 見出しの帯。アイコンと同じ向きのグラデーション */
+.brand {
+  background: linear-gradient(160deg, var(--color-steel) 0%, var(--color-deep) 100%);
+}

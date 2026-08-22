@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "title": "Macopy — a small clipboard history for macOS",
+    "description": "Keeps the last ten things you copied and pastes them back with one shortcut. A Clipy-style clipboard manager for macOS. Free, open source, and built for Apple Silicon."
+  },
+  "hero": {
+    "title": "Your last ten copies, one shortcut away",
+    "tagline": "A small clipboard history for macOS, in the shape Clipy had. Press the shortcut, pick an item with the keyboard, and it pastes straight back into the app you were already in.",
+    "download": "Download",
+    "source": "View source",
+    "note": "Free and open source. For Apple Silicon Macs.",
+    "permission": "Pasting needs Accessibility permission, which macOS asks for on first use"
+  },
+  "features": {
+    "items": [
+      {
+        "title": "Keeps the last ten",
+        "body": "Text and images both. Older entries fall off the end, so the list stays short enough to pick from at a glance."
+      },
+      {
+        "title": "One shortcut brings it up",
+        "body": "Set the key combination you want. The popup opens where you are working, and the number keys pick an entry."
+      },
+      {
+        "title": "Pastes where you were",
+        "body": "Macopy notices which app was in front and pastes into it, so you do not have to click back first."
+      },
+      {
+        "title": "Stays in the menu bar",
+        "body": "No Dock icon and no window to manage. The history and the settings are both under the menu bar icon."
+      }
+    ]
+  },
+  "screens": {
+    "popup": "The Macopy popup, showing recent clipboard entries",
+    "menu": "The Macopy menu bar icon with its menu open"
+  },
+  "footer": {
+    "source": "View on GitHub",
+    "privacy": "Privacy"
+  },
+  "language": {
+    "en": "EN",
+    "ja": "日本語"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: August 22, 2026",
+    "intro": "Macopy watches your clipboard, which is about as personal as it gets. So the important part first: none of it goes anywhere. The app makes no network requests at all — not for analytics, not for updates, not for anything. There is no server behind it and no account.",
+    "sections": [
+      {
+        "title": "Where your history is kept",
+        "body": "Everything you copy is written to a single file inside your own Library folder, on your Mac, and read back from there. Deleting that file, or the app's support folder, clears the history for good."
+      },
+      {
+        "title": "The file is plain text, and that matters",
+        "body": "History is stored unencrypted. Anything you copy is saved as it was copied, and right now Macopy does not skip items that password managers mark as secret. If you copy a password, it lands in that file in readable form, the same as any other entry. That file is inside your user account, so another account on the Mac can't read it — but anything running as you can. If that isn't a trade you want, clear the history after copying something sensitive, or quit Macopy before you do."
+      },
+      {
+        "title": "Why it asks for accessibility and automation",
+        "body": "Picking an item pastes it into whatever app you were using, and macOS treats driving another app that way as accessibility and automation. Those permissions exist for pasting and nothing else. They are not used to read other apps' windows or contents."
+      },
+      {
+        "title": "No analytics, and no update check either",
+        "body": "There is no crash reporting, no usage tracking, no unique identifier, and no third-party SDK. The app does not phone home to look for new versions — you get those from GitHub when you go and get them."
+      },
+      {
+        "title": "You can check all of this",
+        "body": "Macopy is open source under the MIT license, so none of the above has to be taken on trust. Read the source or open an issue there if something looks wrong."
+      },
+      {
+        "title": "Changes",
+        "body": "If a future version starts doing something new with your data, this page gets updated before that version ships."
+      }
+    ],
+    "back": "Back to Macopy"
+  }
+}
