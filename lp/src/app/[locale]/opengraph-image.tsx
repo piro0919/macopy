@@ -1,15 +1,17 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
 export const alt = "Macopy";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const PAPER = "#fbfbfa";
-const INK = "#171a1d";
-const INK_2 = "#5c636a";
-const INK_3 = "#8e959b";
-const STEEL = "#2f6b9c";
-const LINE = "#e3e4e5";
+/* 実際に出るのは kk-web の一覧で176px、X のカードで500px 前後。
+   その大きさで残るのはアイコンと名前と1行だけなので、それしか置かない。
+   色はアプリのアイコンから取る */
+const PAPER = "#eef2f4";
+const NAVY = "#1c3a56";
+const INK_2 = "#4a5c6b";
 
 export default async function OgImage({
   params,
@@ -18,112 +20,39 @@ export default async function OgImage({
 }): Promise<ImageResponse> {
   const { locale } = await params;
   const isJa = locale === "ja";
-
-  const rows = isJa
-    ? [
-        "https://kkweb.io/blog/",
-        "会議のメモ: 来週までに見積り",
-        "piro.haniwa@example.com",
-        "git rebase -i origin/main",
-      ]
-    : [
-        "https://kkweb.io/blog/",
-        "Meeting note: estimate by next week",
-        "piro.haniwa@example.com",
-        "git rebase -i origin/main",
-      ];
+  const icon = await readFile(join(process.cwd(), "public/icon.png"));
+  const iconSrc = `data:image/png;base64,${icon.toString("base64")}`;
 
   return new ImageResponse(
     <div
       style={{
+        alignItems: "center",
         background: PAPER,
         display: "flex",
+        gap: 64,
         height: "100%",
-        padding: "60px 64px",
+        padding: "0 90px",
         width: "100%",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          width: 640,
-        }}
-      >
-        <div style={{ color: STEEL, fontSize: 19, letterSpacing: 5 }}>
-          MACOPY
-        </div>
+      {/* biome-ignore lint/performance/noImgElement: next/image is not available in ImageResponse */}
+      <img alt="" height={300} src={iconSrc} width={300} />
+      <div style={{ display: "flex", flexDirection: "column" }}>
         <div
           style={{
-            color: INK,
-            display: "flex",
-            flexDirection: "column",
-            fontSize: 42,
+            color: NAVY,
+            fontSize: 128,
             fontWeight: 700,
-            lineHeight: 1.25,
-            marginTop: 26,
+            letterSpacing: -3,
           }}
         >
-          {(isJa
-            ? ["直前にコピーした10件を、", "ショートカット1つで"]
-            : ["Your last ten copies,", "one shortcut away"]
-          ).map((line) => (
-            <div key={line}>{line}</div>
-          ))}
+          Macopy
         </div>
-        <div style={{ color: INK_2, fontSize: 21, marginTop: 28 }}>
+        <div style={{ color: INK_2, fontSize: 38, marginTop: 18 }}>
           {isJa
-            ? "無料・オープンソース。Apple Silicon の Mac 向け。"
-            : "Free and open source. For Apple Silicon Macs."}
+            ? "直前の10件を、ショートカット1つで"
+            : "Your last ten copies, one shortcut away"}
         </div>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          flex: 1,
-          flexDirection: "column",
-          justifyContent: "center",
-          paddingLeft: 28,
-        }}
-      >
-        <div
-          style={{
-            borderBottom: `2px solid ${INK}`,
-            color: INK,
-            display: "flex",
-            fontSize: 18,
-            justifyContent: "space-between",
-            paddingBottom: 12,
-          }}
-        >
-          <span>{isJa ? "きょうの履歴" : "Recent copies"}</span>
-          <span style={{ color: INK_3 }}>
-            {isJa ? "数字キーで選ぶ" : "Pick with a number key"}
-          </span>
-        </div>
-        {rows.map((row, i) => (
-          <div
-            key={row}
-            style={{
-              alignItems: "center",
-              borderBottom: `1px solid ${LINE}`,
-              display: "flex",
-              gap: 22,
-              padding: "18px 2px",
-            }}
-          >
-            <span
-              style={{ color: i === 0 ? STEEL : INK_3, fontSize: 18, width: 22 }}
-            >
-              {i + 1}
-            </span>
-            <span style={{ color: i === 0 ? INK : INK_2, fontSize: 19 }}>
-              {row}
-            </span>
-          </div>
-        ))}
       </div>
     </div>,
     { ...size },
