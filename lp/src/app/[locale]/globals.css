@@ -1,15 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  /* 白地に鋼色ひとつ。番号と罫で組む台帳の見立て */
+  /* 色はアイコンから取る。淡い青と白、輪郭の紺。
+     窓はその淡青の面に浮かせる */
   --color-steel: #2f6b9c;
+  --color-sky: #80b3de;
+  --color-sky-soft: #eaf2fa;
   --color-deep: #16222e;
   --color-signal: #2f6b9c;
-  --color-ink: #171a1d;
-  --color-ink-2: #5c636a;
-  --color-ink-3: #8e959b;
-  --color-paper: #fbfbfa;
-  --color-line: #e3e4e5;
+  --color-ink: #1c3a56;
+  --color-ink-2: #4a5c6b;
+  --color-ink-3: #8ba0b1;
+  --color-paper: #f7fafc;
+  --color-line: #dbe5ee;
   --font-display: var(--font-display);
 }
 

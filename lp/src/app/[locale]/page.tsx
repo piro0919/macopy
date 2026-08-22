@@ -113,19 +113,20 @@ export default async function Page({ params }: PageProps) {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-6 pb-20">
-          <div className="flex flex-wrap items-end justify-center gap-6">
+        {/* 窓はアイコンの淡青の上に置く。白地のままだと浮いて見える */}
+        <section className="bg-sky px-6 py-16">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-end justify-center gap-6">
             {/* 実寸は 480x320。これより大きく置くと拡大されて眠くなる */}
             <Image
               alt={t("screens.popup")}
-              className="border border-line"
+              className="border border-white/50 shadow-[0_24px_50px_-20px_rgba(15,45,75,0.45)]"
               height={320}
               src="/screenshot1.png"
               width={480}
             />
             <Image
               alt={t("screens.menu")}
-              className="border border-line"
+              className="border border-white/50 shadow-[0_24px_50px_-20px_rgba(15,45,75,0.45)]"
               height={320}
               src="/screenshot2.png"
               width={480}
