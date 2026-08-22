@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  /* アイコンの配色をそのまま持ってくる。クリップボードの鋼色から濃紺へ */
-  --color-steel: #3c5f7e;
+  /* 白地に鋼色ひとつ。番号と罫で組む台帳の見立て */
+  --color-steel: #2f6b9c;
   --color-deep: #16222e;
-  --color-signal: #3f6d94;
+  --color-signal: #2f6b9c;
   --color-ink: #171a1d;
-  --color-paper: #f4f4f3;
-  --color-line: #e2e3e4;
+  --color-ink-2: #5c636a;
+  --color-ink-3: #8e959b;
+  --color-paper: #fbfbfa;
+  --color-line: #e3e4e5;
 }
 
 html {
@@ -23,7 +25,6 @@ body {
   word-break: auto-phrase;
 }
 
-/* 見出しの帯。アイコンと同じ向きのグラデーション */
-.brand {
-  background: linear-gradient(160deg, var(--color-steel) 0%, var(--color-deep) 100%);
+::selection {
+  background: color-mix(in srgb, var(--color-steel) 22%, transparent);
 }

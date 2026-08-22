@@ -74,5 +74,16 @@
       }
     ],
     "back": "Macopy に戻る"
+  },
+  "stack": {
+    "title": "きょうの履歴",
+    "hint": "数字キーで選ぶ",
+    "items": [
+      "https://kkweb.io/blog/",
+      "会議のメモ:来週までに見積り",
+      "piro.haniwa@example.com",
+      "git rebase -i origin/main",
+      "（画像）スクリーンショット"
+    ]
   }
 }

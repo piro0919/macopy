@@ -74,5 +74,16 @@
       }
     ],
     "back": "Back to Macopy"
+  },
+  "stack": {
+    "title": "Recent copies",
+    "hint": "Pick one with a number key",
+    "items": [
+      "https://kkweb.io/blog/",
+      "Meeting note: estimate by next week",
+      "piro.haniwa@example.com",
+      "git rebase -i origin/main",
+      "(image) Screenshot"
+    ]
   }
 }
