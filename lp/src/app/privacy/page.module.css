@@ -1,0 +1,58 @@
+.page {
+  min-height: 100dvh;
+  padding: 64px 24px 96px;
+  background: #f9f9f9;
+  color: #1a1a1a;
+}
+
+.main {
+  max-width: 680px;
+  margin: 0 auto;
+  line-height: 1.85;
+  font-size: 16px;
+}
+
+.main p {
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.updated {
+  color: #888;
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+.main h2 {
+  font-size: 19px;
+  font-weight: 600;
+  margin-top: 40px;
+  margin-bottom: 12px;
+}
+
+.main a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.back {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e2e2;
+  font-size: 15px;
+}
+
+.back a {
+  color: #555;
+  text-decoration: none;
+}
+
+.back a:hover {
+  color: #1a1a1a;
+}

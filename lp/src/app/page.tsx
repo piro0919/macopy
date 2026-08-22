@@ -1,6 +1,7 @@
 "use client";
 import styles from "./page.module.css";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ClipboardList,
@@ -193,6 +194,9 @@ export default function Page(): React.JSX.Element {
             <br />
             Built with Tauri, React, and ❤️
           </div>
+          <span>
+            <Link href="/privacy">Privacy</Link>
+          </span>
           <span>
             &copy; 2025{" "}
             <a
