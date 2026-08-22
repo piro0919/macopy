@@ -37,7 +37,7 @@ export default async function Page({ params }: PageProps) {
       <main>
         <section className="mx-auto grid max-w-6xl gap-12 px-6 pt-10 pb-16 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16 lg:pt-16">
           <div className="min-w-0">
-            <h1 className="text-balance font-bold text-4xl leading-[1.2] tracking-tight sm:text-5xl">
+            <h1 className="text-balance font-display font-bold text-4xl leading-[1.2] tracking-tight sm:text-5xl">
               {t("hero.title")}
             </h1>
             <p className="mt-6 max-w-md text-pretty text-ink-2 leading-relaxed">
@@ -67,7 +67,7 @@ export default async function Page({ params }: PageProps) {
           {/* 履歴そのものを台帳として置く。番号がそのまま押すキーになる */}
           <div className="min-w-0">
             <div className="flex items-baseline justify-between border-ink border-b pb-3">
-              <span className="font-bold text-sm">{t("stack.title")}</span>
+              <span className="font-display font-bold text-sm">{t("stack.title")}</span>
               <span className="text-ink-3 text-xs">{t("stack.hint")}</span>
             </div>
             <ol>
@@ -104,7 +104,7 @@ export default async function Page({ params }: PageProps) {
                 <span className="font-mono text-sm text-steel">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h2 className="mt-3 font-bold text-base">{item.title}</h2>
+                <h2 className="mt-3 font-display font-bold text-base">{item.title}</h2>
                 <p className="mt-2.5 text-ink-2 text-sm leading-relaxed">
                   {item.body}
                 </p>

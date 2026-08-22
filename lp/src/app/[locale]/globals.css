@@ -10,6 +10,7 @@
   --color-ink-3: #8e959b;
   --color-paper: #fbfbfa;
   --color-line: #e3e4e5;
+  --font-display: var(--font-display);
 }
 
 html {
