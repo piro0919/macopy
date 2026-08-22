@@ -115,19 +115,20 @@ export default async function Page({ params }: PageProps) {
 
         <section className="mx-auto max-w-6xl px-6 pb-20">
           <div className="flex flex-wrap items-end justify-center gap-6">
+            {/* 実寸は 480x320。これより大きく置くと拡大されて眠くなる */}
             <Image
               alt={t("screens.popup")}
               className="border border-line"
-              height={640}
+              height={320}
               src="/screenshot1.png"
-              width={520}
+              width={480}
             />
             <Image
               alt={t("screens.menu")}
               className="border border-line"
-              height={640}
+              height={320}
               src="/screenshot2.png"
-              width={360}
+              width={480}
             />
           </div>
         </section>
