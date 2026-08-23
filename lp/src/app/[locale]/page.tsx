@@ -16,7 +16,6 @@ export default async function Page({ params }: PageProps) {
 
   const t = await getTranslations();
   const features = t.raw("features.items") as Item[];
-  const stack = t.raw("stack.items") as string[];
 
   return (
     <>
@@ -64,35 +63,17 @@ export default async function Page({ params }: PageProps) {
             </p>
           </div>
 
-          {/* 履歴そのものを台帳として置く。番号がそのまま押すキーになる */}
+          {/* 実際のポップアップ。同種のクリップボード管理アプリは
+              どれも本物の一覧と番号ショートカットを見せている */}
           <div className="min-w-0">
-            <div className="flex items-baseline justify-between border-ink border-b pb-3">
-              <span className="font-display font-bold text-sm">{t("stack.title")}</span>
-              <span className="text-ink-3 text-xs">{t("stack.hint")}</span>
-            </div>
-            <ol>
-              {stack.map((line, i) => (
-                <li
-                  className="flex items-center gap-5 border-line border-b py-4"
-                  key={line}
-                >
-                  <span
-                    className={`w-6 shrink-0 font-mono text-sm ${
-                      i === 0 ? "text-steel" : "text-ink-3"
-                    }`}
-                  >
-                    {i + 1}
-                  </span>
-                  <span
-                    className={`truncate text-sm ${
-                      i === 0 ? "font-bold text-ink" : "text-ink-2"
-                    }`}
-                  >
-                    {line}
-                  </span>
-                </li>
-              ))}
-            </ol>
+            <Image
+              alt={t("screens.popup")}
+              className="w-full border border-line"
+              height={639}
+              priority={true}
+              src="/screenshot-popup.png"
+              width={1260}
+            />
           </div>
         </section>
 
