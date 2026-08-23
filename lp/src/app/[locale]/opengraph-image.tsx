@@ -27,7 +27,12 @@ export default async function OgImage({
 }): Promise<ImageResponse> {
   const { locale } = await params;
   const isJa = locale === "ja";
-  const icon = await readFile(join(process.cwd(), "public/icon.png"));
+  /* 見出しの書体はサイトと同じ Murecho。使う文字だけに絞ったものを
+     同梱している。文言を変えたら assets/README.md の手順で作り直す */
+  const [icon, font] = await Promise.all([
+    readFile(join(process.cwd(), "public/icon.png")),
+    readFile(join(process.cwd(), "assets/Murecho-800-subset.ttf")),
+  ]);
   const iconSrc = `data:image/png;base64,${icon.toString("base64")}`;
 
   return new ImageResponse(
@@ -62,6 +67,11 @@ export default async function OgImage({
         </div>
       </div>
     </div>,
-    { ...size },
+    {
+      ...size,
+      fonts: [
+        { data: font, name: "Murecho", style: "normal", weight: 800 },
+      ],
+    },
   );
 }
