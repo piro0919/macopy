@@ -54,7 +54,7 @@
       },
       {
         "title": "The file is plain text, and that matters",
-        "body": "History is stored unencrypted. Anything you copy is saved as it was copied, and right now Macopy does not skip items that password managers mark as secret. If you copy a password, it lands in that file in readable form, the same as any other entry. That file is inside your user account, so another account on the Mac can't read it — but anything running as you can. If that isn't a trade you want, clear the history after copying something sensitive, or quit Macopy before you do."
+        "body": "History is stored unencrypted. Anything you copy is saved as it was copied, except for items a password manager marks as secret. macOS has a convention for this, `org.nspasteboard.ConcealedType`, and Macopy skips anything carrying it, along with content marked transient or auto-generated. A password from an app that does not set that marker still lands in the file in readable form, the same as any other entry. That file is inside your user account, so another account on the Mac can't read it — but anything running as you can. If that isn't a trade you want, clear the history after copying something sensitive, or quit Macopy before you do."
       },
       {
         "title": "Why it asks for accessibility and automation",
