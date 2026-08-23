@@ -72,3 +72,13 @@ npm run vite:dev
 - macOS 専用（ARM64 / x86_64 ビルド対応）
 - Tauri v2 使用
 - macos-private-api 機能が有効（透過ウィンドウ等に必要）
+
+## OGP 画像
+
+配信しているのは `lp/src/app/[locale]/opengraph-image.tsx` が生成する動的ルート。
+`lp/public/ogp.png` は以前の静的画像で、**どこからも参照していない**。
+
+消していないのは、kkweb.io のポートフォリオ一覧が各サイトの `og:image` を24時間
+キャッシュしていて、キャッシュが古い URL を指したままファイルを消すと一覧の
+サムネイルが 404 になるため。実際に一度そうなった。消すなら、先に
+`vercel cache purge --type data` と再デプロイで kk-web を動的ルートに向けてから。
