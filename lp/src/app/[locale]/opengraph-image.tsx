@@ -31,7 +31,7 @@ export default async function OgImage({
      同梱している。文言を変えたら assets/README.md の手順で作り直す */
   const [icon, font] = await Promise.all([
     readFile(join(process.cwd(), "public/icon.png")),
-    readFile(join(process.cwd(), "assets/Murecho-800-subset.ttf")),
+    readFile(join(process.cwd(), "assets/Murecho-500-subset.ttf")),
   ]);
   const iconSrc = `data:image/png;base64,${icon.toString("base64")}`;
 
@@ -54,7 +54,6 @@ export default async function OgImage({
           style={{
             color: NAVY,
             fontSize: 128,
-            fontWeight: 700,
             letterSpacing: -3,
           }}
         >
@@ -70,7 +69,7 @@ export default async function OgImage({
     {
       ...size,
       fonts: [
-        { data: font, name: "Murecho", style: "normal", weight: 800 },
+        { data: font, name: "Murecho", style: "normal", weight: 500 },
       ],
     },
   );
