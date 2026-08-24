@@ -49,6 +49,19 @@ impl HistoryItem {
     }
 }
 
+/// Lock a mutex, surviving poisoning.
+///
+/// A poisoned lock means an earlier holder panicked mid-update. Everything
+/// `AppState` guards is clipboard history and UI preferences, so recovering
+/// the inner value and logging beats panicking again and killing a menu-bar
+/// app the user reaches for dozens of times a day.
+fn lock_through_poison<'a, T>(m: &'a Mutex<T>, what: &str) -> std::sync::MutexGuard<'a, T> {
+    m.lock().unwrap_or_else(|poisoned| {
+        log::error!("{what} mutex was poisoned; continuing with the recovered value");
+        poisoned.into_inner()
+    })
+}
+
 pub struct AppState {
     history: Mutex<Vec<HistoryItem>>,
     last_active_app: Mutex<String>,
@@ -258,62 +271,56 @@ fn update_clipboard(app: &AppHandle, state: &AppState) -> bool {
         return false;
     }
 
-    let clipboard = app.clipboard();
-    let mut changed = false;
-
-    // Try to read image first (higher priority)
-    if let Some(image_data) = read_image_from_clipboard() {
-        let mut history = state.history.lock().unwrap();
-        let new_item = HistoryItem::Image(image_data.clone());
-
-        if history.first() != Some(&new_item) {
-            history.insert(0, new_item);
-            if history.len() > MAX_HISTORY_ITEMS {
-                history.pop();
-            }
-            changed = true;
-
-            // Save to store
-            if let Ok(store) = app.store("store.json") {
-                let history_json: Vec<serde_json::Value> = history
-                    .iter()
-                    .map(|item| item.to_frontend_format())
-                    .collect();
-                let _ = store.set("history", serde_json::json!(history_json));
-                let _ = store.save();
-            }
+    // Image wins over text: apps that copy an image often put a text
+    // representation on the pasteboard alongside it.
+    let new_item = if let Some(image_data) = read_image_from_clipboard() {
+        HistoryItem::Image(image_data)
+    } else {
+        match app.clipboard().read_text() {
+            Ok(text) if !text.is_empty() => HistoryItem::Text(text),
+            _ => return false,
         }
-    } else if let Ok(text) = clipboard.read_text() {
-        // Fall back to text
-        if !text.is_empty() {
-            let mut history = state.history.lock().unwrap();
-            let new_item = HistoryItem::Text(text.clone());
+    };
 
-            if history.first() != Some(&new_item) {
-                history.insert(0, new_item);
-                if history.len() > MAX_HISTORY_ITEMS {
-                    history.pop();
-                }
-                changed = true;
-
-                // Save to store
-                if let Ok(store) = app.store("store.json") {
-                    let history_json: Vec<serde_json::Value> = history
-                        .iter()
-                        .map(|item| item.to_frontend_format())
-                        .collect();
-                    let _ = store.set("history", serde_json::json!(history_json));
-                    let _ = store.save();
-                }
-            }
-        }
+    let mut history = lock_through_poison(&state.history, "history");
+    if !push_history(&mut history, new_item) {
+        return false;
     }
+    persist_history(app, &history);
+    true
+}
 
-    changed
+/// Put a freshly-copied item at the front of the history.
+///
+/// Returns false when it matches the current head — copying the same thing
+/// twice in a row should not fill the list with duplicates. The list is
+/// capped at `MAX_HISTORY_ITEMS`, oldest dropped first.
+fn push_history(history: &mut Vec<HistoryItem>, item: HistoryItem) -> bool {
+    if history.first() == Some(&item) {
+        return false;
+    }
+    history.insert(0, item);
+    history.truncate(MAX_HISTORY_ITEMS);
+    true
+}
+
+/// Mirror the in-memory history into the on-disk store. Best-effort: a
+/// failure here costs the history across a restart, not the copy that was
+/// just made.
+fn persist_history(app: &AppHandle, history: &[HistoryItem]) {
+    let Ok(store) = app.store("store.json") else {
+        return;
+    };
+    let history_json: Vec<serde_json::Value> = history
+        .iter()
+        .map(|item| item.to_frontend_format())
+        .collect();
+    let _ = store.set("history", serde_json::json!(history_json));
+    let _ = store.save();
 }
 
 fn send_history_to_frontend(app: &AppHandle, state: &AppState) {
-    let history = state.history.lock().unwrap();
+    let history = lock_through_poison(&state.history, "history");
     let history_json: Vec<serde_json::Value> = history
         .iter()
         .map(|item| item.to_frontend_format())
@@ -517,9 +524,9 @@ fn is_japanese() -> bool {
 
 fn build_tray_menu(app: &AppHandle, state: &AppState) -> tauri::Result<Menu<tauri::Wry>> {
     let is_ja = is_japanese();
-    let history = state.history.lock().unwrap();
-    let current_shortcut = state.current_shortcut.lock().unwrap().clone();
-    let open_at_login = *state.open_at_login.lock().unwrap();
+    let history = lock_through_poison(&state.history, "history");
+    let current_shortcut = lock_through_poison(&state.current_shortcut, "current_shortcut").clone();
+    let open_at_login = *lock_through_poison(&state.open_at_login, "open_at_login");
 
     let mut builder = MenuBuilder::new(app);
 
@@ -609,7 +616,7 @@ fn build_tray_menu(app: &AppHandle, state: &AppState) -> tauri::Result<Menu<taur
 
 fn update_tray_menu(app: &AppHandle, state: &AppState) {
     if let Ok(menu) = build_tray_menu(app, state) {
-        if let Some(tray) = state.tray_icon.lock().unwrap().as_ref() {
+        if let Some(tray) = lock_through_poison(&state.tray_icon, "tray_icon").as_ref() {
             let _ = tray.set_menu(Some(menu));
         }
     }
@@ -643,7 +650,7 @@ fn register_shortcut(app: &AppHandle, shortcut_str: &str) {
 
         let frontmost = get_frontmost_app();
         if let Some(state) = _app.try_state::<AppState>() {
-            *state.last_active_app.lock().unwrap() = frontmost;
+            *lock_through_poison(&state.last_active_app, "last_active_app") = frontmost;
             update_clipboard(&app_handle, &state);
             send_history_to_frontend(&app_handle, &state);
             update_tray_menu(&app_handle, &state);
@@ -657,7 +664,7 @@ fn register_shortcut(app: &AppHandle, shortcut_str: &str) {
 
 fn change_shortcut(app: &AppHandle, state: &AppState, new_shortcut: &str) {
     unregister_all_shortcuts(app);
-    *state.current_shortcut.lock().unwrap() = new_shortcut.to_string();
+    *lock_through_poison(&state.current_shortcut, "current_shortcut") = new_shortcut.to_string();
     register_shortcut(app, new_shortcut);
 
     // Save to store
@@ -670,7 +677,7 @@ fn change_shortcut(app: &AppHandle, state: &AppState, new_shortcut: &str) {
 }
 
 fn toggle_login_item(app: &AppHandle, state: &AppState) {
-    let mut open_at_login = state.open_at_login.lock().unwrap();
+    let mut open_at_login = lock_through_poison(&state.open_at_login, "open_at_login");
     *open_at_login = !*open_at_login;
     let new_value = *open_at_login;
     drop(open_at_login);
@@ -705,12 +712,12 @@ end tell
 }
 
 fn handle_history_click(app: &AppHandle, state: &AppState, index: usize) {
-    let history = state.history.lock().unwrap();
+    let history = lock_through_poison(&state.history, "history");
     if let Some(item) = history.get(index) {
         let item = item.clone();
         drop(history);
 
-        let last_app = state.last_active_app.lock().unwrap().clone();
+        let last_app = lock_through_poison(&state.last_active_app, "last_active_app").clone();
 
         match &item {
             HistoryItem::Text(content) => {
@@ -762,7 +769,7 @@ fn load_state_from_store(app: &AppHandle, state: &AppState) {
         // Load history
         if let Some(history_value) = store.get("history") {
             if let Ok(items) = serde_json::from_value::<Vec<serde_json::Value>>(history_value.clone()) {
-                let mut history = state.history.lock().unwrap();
+                let mut history = lock_through_poison(&state.history, "history");
                 history.clear();
                 for item in items {
                     if let (Some(type_str), Some(content)) = (
@@ -782,19 +789,19 @@ fn load_state_from_store(app: &AppHandle, state: &AppState) {
         // Load settings
         if let Some(show_tray) = store.get("showTrayIcon") {
             if let Some(show) = show_tray.as_bool() {
-                *state.show_tray_icon.lock().unwrap() = show;
+                *lock_through_poison(&state.show_tray_icon, "show_tray_icon") = show;
             }
         }
 
         if let Some(shortcut) = store.get("shortcut") {
             if let Some(s) = shortcut.as_str() {
-                *state.current_shortcut.lock().unwrap() = s.to_string();
+                *lock_through_poison(&state.current_shortcut, "current_shortcut") = s.to_string();
             }
         }
 
         if let Some(login) = store.get("openAtLogin") {
             if let Some(l) = login.as_bool() {
-                *state.open_at_login.lock().unwrap() = l;
+                *lock_through_poison(&state.open_at_login, "open_at_login") = l;
             }
         }
     }
@@ -828,7 +835,7 @@ fn hide_window(window: WebviewWindow) {
 
 #[tauri::command]
 fn paste_from_clipboard(state: State<AppState>) {
-    let app_name = state.last_active_app.lock().unwrap().clone();
+    let app_name = lock_through_poison(&state.last_active_app, "last_active_app").clone();
     execute_paste(&app_name);
 }
 
@@ -856,7 +863,7 @@ fn copy_image(_app: AppHandle, data_url: String) {
 
 #[tauri::command]
 fn toggle_tray_icon(app: AppHandle, state: State<AppState>) -> bool {
-    let mut show = state.show_tray_icon.lock().unwrap();
+    let mut show = lock_through_poison(&state.show_tray_icon, "show_tray_icon");
     *show = !*show;
     let new_value = *show;
     drop(show);
@@ -868,7 +875,7 @@ fn toggle_tray_icon(app: AppHandle, state: State<AppState>) -> bool {
     }
 
     // Actually show/hide the tray icon
-    if let Some(tray) = state.tray_icon.lock().unwrap().as_ref() {
+    if let Some(tray) = lock_through_poison(&state.tray_icon, "tray_icon").as_ref() {
         let _ = tray.set_visible(new_value);
     }
 
@@ -877,7 +884,7 @@ fn toggle_tray_icon(app: AppHandle, state: State<AppState>) -> bool {
 
 #[tauri::command]
 fn get_tray_icon_state(state: State<AppState>) -> bool {
-    *state.show_tray_icon.lock().unwrap()
+    *lock_through_poison(&state.show_tray_icon, "show_tray_icon")
 }
 
 #[tauri::command]
@@ -980,7 +987,7 @@ pub fn run() {
                         if let Some(window) = app.get_webview_window("main") {
                             if let Some(state) = app.try_state::<AppState>() {
                                 let frontmost = get_frontmost_app();
-                                *state.last_active_app.lock().unwrap() = frontmost;
+                                *lock_through_poison(&state.last_active_app, "last_active_app") = frontmost;
                                 update_clipboard(app, &state);
                                 send_history_to_frontend(app, &state);
                                 update_tray_menu(app, &state);
@@ -993,11 +1000,11 @@ pub fn run() {
 
             // Store tray icon reference
             if let Some(state) = app.try_state::<AppState>() {
-                *state.tray_icon.lock().unwrap() = Some(tray);
+                *lock_through_poison(&state.tray_icon, "tray_icon") = Some(tray);
 
                 // Set initial visibility
-                let show_tray = *state.show_tray_icon.lock().unwrap();
-                if let Some(tray) = state.tray_icon.lock().unwrap().as_ref() {
+                let show_tray = *lock_through_poison(&state.show_tray_icon, "show_tray_icon");
+                if let Some(tray) = lock_through_poison(&state.tray_icon, "tray_icon").as_ref() {
                     let _ = tray.set_visible(show_tray);
                 }
             }
@@ -1005,7 +1012,7 @@ pub fn run() {
             // Register global shortcut
             let shortcut = {
                 if let Some(state) = app.try_state::<AppState>() {
-                    state.current_shortcut.lock().unwrap().clone()
+                    lock_through_poison(&state.current_shortcut, "current_shortcut").clone()
                 } else {
                     "Alt+V".to_string()
                 }
@@ -1040,6 +1047,78 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod history_tests {
+    use super::*;
+
+    fn text(s: &str) -> HistoryItem {
+        HistoryItem::Text(s.to_string())
+    }
+
+    fn contents(history: &[HistoryItem]) -> Vec<String> {
+        history
+            .iter()
+            .map(|item| match item {
+                HistoryItem::Text(c) | HistoryItem::Image(c) => c.clone(),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn first_copy_lands_at_the_front() {
+        let mut history = Vec::new();
+        assert!(push_history(&mut history, text("hello")));
+        assert_eq!(contents(&history), vec!["hello"]);
+    }
+
+    #[test]
+    fn newest_copy_pushes_the_previous_one_down() {
+        let mut history = vec![text("first")];
+        assert!(push_history(&mut history, text("second")));
+        assert_eq!(contents(&history), vec!["second", "first"]);
+    }
+
+    #[test]
+    fn copying_the_same_thing_twice_in_a_row_is_ignored() {
+        let mut history = vec![text("same")];
+        assert!(!push_history(&mut history, text("same")));
+        assert_eq!(history.len(), 1);
+    }
+
+    #[test]
+    fn an_older_duplicate_deeper_in_the_list_still_gets_re_added() {
+        // Only the head is de-duplicated, so re-copying something from
+        // further down brings it back to the front rather than being
+        // silently dropped.
+        let mut history = vec![text("b"), text("a")];
+        assert!(push_history(&mut history, text("a")));
+        assert_eq!(contents(&history), vec!["a", "b", "a"]);
+    }
+
+    #[test]
+    fn text_and_image_with_equal_payloads_are_different_items() {
+        let mut history = vec![HistoryItem::Image("payload".to_string())];
+        assert!(push_history(&mut history, text("payload")));
+        assert_eq!(history.len(), 2);
+    }
+
+    #[test]
+    fn the_list_stops_growing_at_the_cap_and_drops_the_oldest() {
+        let mut history = Vec::new();
+        for i in 0..MAX_HISTORY_ITEMS {
+            assert!(push_history(&mut history, text(&format!("item{i}"))));
+        }
+        assert_eq!(history.len(), MAX_HISTORY_ITEMS);
+
+        assert!(push_history(&mut history, text("newest")));
+        assert_eq!(history.len(), MAX_HISTORY_ITEMS);
+        assert_eq!(contents(&history)[0], "newest");
+        // item0 was the oldest and is the one that falls off.
+        assert!(!contents(&history).contains(&"item0".to_string()));
+        assert!(contents(&history).contains(&"item1".to_string()));
+    }
 }
 
 #[cfg(all(test, target_os = "macos"))]
