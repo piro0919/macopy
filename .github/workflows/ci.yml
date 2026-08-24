@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # macOS 専用アプリなので、Linux ランナーでは tauri のシステム依存が揃わない。
+  ci:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+      - run: npm ci
+      # lint はまだ eslint の設定ファイルが無く動かないので入れていない。
+      - run: npm run type-check
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src
+      - run: cargo test --manifest-path src/Cargo.toml
