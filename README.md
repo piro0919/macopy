@@ -68,6 +68,18 @@ To enable full functionality, please grant the following:
 
 ---
 
+## ⚙️ Development
+
+Tauri builds the native side, so a Rust toolchain is needed alongside Node.
+
+```bash
+npm install
+npm run dev     # tauri dev
+npm run build   # tauri build, then an ad-hoc codesign of the .app
+```
+
+The landing page under `lp/` runs separately with `npm run dev:lp`.
+
 ## 📝 License
 
 MIT — Contributions welcome!
