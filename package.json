@@ -44,7 +44,7 @@
     "eslint-plugin-write-good-comments": "0.2.0",
     "knip": "^5.88.1",
     "lefthook": "1.13.6",
-    "prettier": "3.9.8",
+    "prettier": "3.9.9",
     "secretlint": "9.3.4",
     "stylelint": "16.26.1",
     "stylelint-config-css-modules": "4.6.0",
