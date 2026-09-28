@@ -1,7 +1,7 @@
 {
   "meta": {
-    "title": "Macopy — a small clipboard history for macOS",
-    "description": "Keeps the last ten things you copied and pastes them back with one shortcut. A Clipy-style clipboard manager for macOS. Free, open source, and built for Apple Silicon."
+    "title": "Macopy — a lightweight Clipy alternative for macOS",
+    "description": "A Clipy-style clipboard manager for macOS that keeps the last ten things you copied and pastes them back with one shortcut. Free, open source, and built for Apple Silicon."
   },
   "hero": {
     "title": "Your last ten copies, one shortcut away",

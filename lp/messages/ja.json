@@ -1,7 +1,7 @@
 {
   "meta": {
-    "title": "Macopy — macOS の小さなクリップボード履歴",
-    "description": "直前にコピーした10件を覚えていて、ショートカット1つで貼り直せます。Clipy と同じ形の macOS 向けクリップボード管理アプリです。無料・オープンソース、Apple Silicon の Mac 向けです。"
+    "title": "Macopy — Clipy の代わりに使える macOS のクリップボード履歴",
+    "description": "Clipy と同じ形の、macOS 向けの軽いクリップボード管理アプリです。直前にコピーした10件を覚えていて、ショートカット1つで貼り直せます。無料・オープンソース、Apple Silicon の Mac 向けです。"
   },
   "hero": {
     "title": "直前にコピーした10件を、ショートカット1つで",
