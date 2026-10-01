@@ -10,6 +10,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Manager, State, WebviewWindow,
 };
+use tauri_plugin_autostart::ManagerExt as AutostartExt;
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_store::StoreExt;
@@ -24,6 +25,9 @@ use objc::{msg_send, sel, sel_impl};
 const MAX_HISTORY_ITEMS: usize = 10;
 const POPUP_WIDTH: f64 = 250.0;
 const CLIPBOARD_POLL_INTERVAL_MS: u64 = 500;
+/// Store key recording that the login item has been moved over to the
+/// autostart plugin. See `sync_autostart_on_startup`.
+const AUTOSTART_MIGRATED_KEY: &str = "autostartMigrated";
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 #[serde(tag = "type", content = "content")]
@@ -72,6 +76,8 @@ pub struct AppState {
     /// The shortcut that failed to register, shown in the tray menu so the
     /// user knows why the popup does not open.
     shortcut_error: Mutex<Option<String>>,
+    /// Set when the last attempt to change Launch at Login failed.
+    login_error: Mutex<bool>,
 }
 
 impl Default for AppState {
@@ -84,6 +90,7 @@ impl Default for AppState {
             open_at_login: Mutex::new(false),
             tray_icon: Mutex::new(None),
             shortcut_error: Mutex::new(None),
+            login_error: Mutex::new(false),
         }
     }
 }
@@ -532,6 +539,7 @@ fn build_tray_menu(app: &AppHandle, state: &AppState) -> tauri::Result<Menu<taur
     let current_shortcut = lock_through_poison(&state.current_shortcut, "current_shortcut").clone();
     let open_at_login = *lock_through_poison(&state.open_at_login, "open_at_login");
     let shortcut_error = lock_through_poison(&state.shortcut_error, "shortcut_error").clone();
+    let login_error = *lock_through_poison(&state.login_error, "login_error");
 
     let mut builder = MenuBuilder::new(app);
 
@@ -619,6 +627,16 @@ fn build_tray_menu(app: &AppHandle, state: &AppState) -> tauri::Result<Menu<taur
     };
     let login_item = MenuItem::with_id(app, "toggle_login", login_label, true, None::<&str>)?;
     builder = builder.item(&login_item);
+
+    if login_error {
+        let label = if is_ja {
+            "⚠ 自動起動の設定を変更できませんでした"
+        } else {
+            "⚠ Couldn't change Launch at Login"
+        };
+        let error_item = MenuItem::with_id(app, "login_error", label, false, None::<&str>)?;
+        builder = builder.item(&error_item);
+    }
 
     // Separator and quit
     builder = builder.separator();
@@ -726,39 +744,117 @@ fn change_shortcut(app: &AppHandle, state: &AppState, new_shortcut: &str) {
     update_tray_menu(app, state);
 }
 
-fn toggle_login_item(app: &AppHandle, state: &AppState) {
-    let mut open_at_login = lock_through_poison(&state.open_at_login, "open_at_login");
-    *open_at_login = !*open_at_login;
-    let new_value = *open_at_login;
-    drop(open_at_login);
+/// Make the login item match `enabled`.
+///
+/// The autostart plugin identifies the login item by the bundle name, which is
+/// also the name the old hand-written AppleScript gave it ("Macopy"). Any
+/// existing entry is removed before adding a new one, so a stale item from the
+/// old code, which always pointed at /Applications/Macopy.app wherever the app
+/// really lived, is replaced by one with the current path rather than kept or
+/// duplicated.
+fn set_autostart(app: &AppHandle, enabled: bool) -> Result<(), String> {
+    let autolaunch = app.autolaunch();
+    if autolaunch.is_enabled().map_err(|e| e.to_string())? {
+        autolaunch.disable().map_err(|e| e.to_string())?;
+    }
+    if enabled {
+        autolaunch.enable().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
 
-    // Save to store
+fn save_open_at_login(app: &AppHandle, value: bool) {
     if let Ok(store) = app.store("store.json") {
-        let _ = store.set("openAtLogin", serde_json::json!(new_value));
+        store.set("openAtLogin", serde_json::json!(value));
         let _ = store.save();
     }
+}
 
-    // Set login item using AppleScript (works without sandbox)
-    let script = if new_value {
-        r#"
-tell application "System Events"
-    make login item at end with properties {path:"/Applications/Macopy.app", hidden:false}
-end tell
-"#
-    } else {
-        r#"
-tell application "System Events"
-    delete login item "Macopy"
-end tell
-"#
+/// Runs off the main thread: osascript can take a while, and longer still the
+/// first time macOS asks whether Macopy may control System Events. The setting
+/// is only saved once the login item has actually changed.
+fn toggle_login_item(app: &AppHandle, state: &AppState) {
+    let desired = !*lock_through_poison(&state.open_at_login, "open_at_login");
+    let app = app.clone();
+
+    thread::spawn(move || {
+        let Some(state) = app.try_state::<AppState>() else {
+            return;
+        };
+        match set_autostart(&app, desired) {
+            Ok(()) => {
+                *lock_through_poison(&state.open_at_login, "open_at_login") = desired;
+                *lock_through_poison(&state.login_error, "login_error") = false;
+                save_open_at_login(&app, desired);
+            }
+            Err(e) => {
+                log::error!("Failed to set Launch at Login to {desired}: {e}");
+                *lock_through_poison(&state.login_error, "login_error") = true;
+            }
+        }
+        update_tray_menu(&app, &state);
+    });
+}
+
+/// Bring the login item in line with the saved setting at startup.
+///
+/// Users who turned the setting on before the autostart plugin have a login
+/// item made by the old AppleScript, pointing at /Applications/Macopy.app.
+/// On the first launch of this version it is replaced once with one for the
+/// app's real location; after that it is only re-added if missing. If neither
+/// works, the setting is turned off and the tray menu says so.
+///
+/// Skipped in debug builds, where the executable is a bare binary in
+/// target/debug and must not end up as a login item.
+fn sync_autostart_on_startup(app: &AppHandle) {
+    if cfg!(debug_assertions) {
+        return;
+    }
+    let Some(state) = app.try_state::<AppState>() else {
+        return;
     };
+    if !*lock_through_poison(&state.open_at_login, "open_at_login") {
+        return;
+    }
+    let app = app.clone();
 
-    let _ = Command::new("osascript")
-        .arg("-e")
-        .arg(script)
-        .spawn();
+    thread::spawn(move || {
+        let Some(state) = app.try_state::<AppState>() else {
+            return;
+        };
+        let store = app.store("store.json").ok();
+        let migrated = store
+            .as_ref()
+            .and_then(|s| s.get(AUTOSTART_MIGRATED_KEY))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
 
-    update_tray_menu(app, state);
+        let result = if migrated {
+            match app.autolaunch().is_enabled() {
+                Ok(true) => Ok(()),
+                Ok(false) => app.autolaunch().enable().map_err(|e| e.to_string()),
+                Err(e) => Err(e.to_string()),
+            }
+        } else {
+            set_autostart(&app, true)
+        };
+
+        match result {
+            Ok(()) => {
+                if let Some(store) = store {
+                    store.set(AUTOSTART_MIGRATED_KEY, serde_json::json!(true));
+                    let _ = store.save();
+                }
+            }
+            Err(e) => {
+                log::error!("Failed to restore Launch at Login at startup: {e}");
+                *lock_through_poison(&state.open_at_login, "open_at_login") = false;
+                *lock_through_poison(&state.login_error, "login_error") = true;
+                save_open_at_login(&app, false);
+                update_tray_menu(&app, &state);
+            }
+        }
+    });
 }
 
 fn handle_history_click(app: &AppHandle, state: &AppState, index: usize) {
@@ -953,6 +1049,13 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
+        // AppleScript login item rather than a LaunchAgent, as in galopen. It
+        // also keeps the item's name "Macopy", the same as the one the old
+        // code created, so existing users' items are found and replaced.
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::AppleScript,
+            None,
+        ))
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             // Focus existing window when second instance is launched
             if let Some(window) = app.get_webview_window("main") {
@@ -1083,6 +1186,8 @@ pub fn run() {
                     }
                 });
             }
+
+            sync_autostart_on_startup(app.handle());
 
             // Start clipboard watcher
             start_clipboard_watcher(app.handle().clone(), watcher_running_clone);
