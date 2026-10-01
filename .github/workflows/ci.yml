@@ -16,7 +16,7 @@ jobs:
           node-version: 24.21.0
           cache: npm
       - run: npm ci
-      # lint はまだ eslint の設定ファイルが無く動かないので入れていない。
+      - run: npm run lint
       - run: npm run type-check
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2

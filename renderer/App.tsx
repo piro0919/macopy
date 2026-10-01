@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import useMeasure from "react-use-measure";
-import type { HistoryItem } from "../shared/types";
-import styles from "./App.module.css";
 import { copyText, tauriApi } from "./api/tauri";
+import styles from "./App.module.css";
+import type { HistoryItem } from "../shared/types";
 
 const api = tauriApi;
-
 const App = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
@@ -22,49 +21,60 @@ const App = () => {
   useEffect(() => {
     (async () => {
       const result = await api.getTrayIconState();
+
       setTrayVisible(result);
     })();
   }, []);
 
   useEffect(() => {
-    const handler = async (e: KeyboardEvent) => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
       e.preventDefault();
+
       if (e.key === "ArrowUp") {
         setSelectedIndex((prev) =>
-          prev === 0 ? history.length - 1 : prev - 1
+          prev === 0 ? history.length - 1 : prev - 1,
         );
       } else if (e.key === "ArrowDown") {
         setSelectedIndex((prev) =>
-          prev === history.length - 1 ? 0 : prev + 1
+          prev === history.length - 1 ? 0 : prev + 1,
         );
       } else if (e.key === "Enter") {
         const item = history[selectedIndex];
+
         if (item) {
           if (item.type === "text") {
             await copyText(item.content);
           } else {
             api.copyImage(item.content);
           }
+
           await api.hideWindow();
           await api.pasteFromClipboard();
         }
       } else if (/^[0-9]$/.test(e.key)) {
         const pressed = Number(e.key);
         const index = pressed === 0 ? 9 : pressed - 1;
+
         if (index < history.length) {
           const item = history[index];
+
           if (item.type === "text") {
             await copyText(item.content);
           } else {
             api.copyImage(item.content);
           }
+
           await api.hideWindow();
           await api.pasteFromClipboard();
         }
       }
     };
+    const handler = (e: KeyboardEvent) => {
+      void handleKeyDown(e);
+    };
 
     window.addEventListener("keydown", handler);
+
     return () => window.removeEventListener("keydown", handler);
   }, [history, selectedIndex]);
 
@@ -78,6 +88,7 @@ const App = () => {
     } else {
       api.copyImage(item.content);
     }
+
     await api.hideWindow();
     await api.pasteFromClipboard();
   };
@@ -91,11 +102,13 @@ const App = () => {
               ? styles.selected
               : ""
           }`}
-          key={`${item.type}-${item.content.slice(0, 20)}-${index}`}
-          onClick={() => handleItemClick(item)}
+          onClick={() => {
+            void handleItemClick(item);
+          }}
           onMouseEnter={() => {
             setSelectedIndex(index);
           }}
+          key={`${item.type}-${item.content.slice(0, 20)}-${index}`}
           type="button"
         >
           <div>
@@ -116,7 +129,6 @@ const App = () => {
       ))}
       {history.length > 0 ? <hr className={styles.hr} /> : null}
       <button
-        className={`${styles.item} ${styles.toggle}`}
         onClick={() => {
           api.toggleTrayIcon();
           setTrayVisible((prev) => !prev);
@@ -124,6 +136,7 @@ const App = () => {
         onMouseEnter={() => {
           setSelectedIndex(-1);
         }}
+        className={`${styles.item} ${styles.toggle}`}
         type="button"
       >
         {isJapanese
@@ -135,13 +148,13 @@ const App = () => {
             : "Show in menu bar"}
       </button>
       <button
-        className={`${styles.item} ${styles.close}`}
         onClick={() => {
           api.quitApp();
         }}
         onMouseEnter={() => {
           setSelectedIndex(-1);
         }}
+        className={`${styles.item} ${styles.close}`}
         type="button"
       >
         {isJapanese ? "Macopy を終了" : "Quit Macopy"}

@@ -1,4 +1,4 @@
-export interface HistoryItem {
-  type: "text" | "image";
+export type HistoryItem = {
   content: string;
-}
+  type: "image" | "text";
+};
