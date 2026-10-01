@@ -69,6 +69,9 @@ pub struct AppState {
     current_shortcut: Mutex<String>,
     open_at_login: Mutex<bool>,
     tray_icon: Mutex<Option<TrayIcon>>,
+    /// The shortcut that failed to register, shown in the tray menu so the
+    /// user knows why the popup does not open.
+    shortcut_error: Mutex<Option<String>>,
 }
 
 impl Default for AppState {
@@ -80,6 +83,7 @@ impl Default for AppState {
             current_shortcut: Mutex::new("Alt+V".to_string()),
             open_at_login: Mutex::new(false),
             tray_icon: Mutex::new(None),
+            shortcut_error: Mutex::new(None),
         }
     }
 }
@@ -527,6 +531,7 @@ fn build_tray_menu(app: &AppHandle, state: &AppState) -> tauri::Result<Menu<taur
     let history = lock_through_poison(&state.history, "history");
     let current_shortcut = lock_through_poison(&state.current_shortcut, "current_shortcut").clone();
     let open_at_login = *lock_through_poison(&state.open_at_login, "open_at_login");
+    let shortcut_error = lock_through_poison(&state.shortcut_error, "shortcut_error").clone();
 
     let mut builder = MenuBuilder::new(app);
 
@@ -561,6 +566,16 @@ fn build_tray_menu(app: &AppHandle, state: &AppState) -> tauri::Result<Menu<taur
     // Separator
     if !history.is_empty() {
         builder = builder.separator();
+    }
+
+    if let Some(failed) = shortcut_error {
+        let label = if is_ja {
+            format!("⚠ {} を登録できませんでした", shortcut_display_name(&failed))
+        } else {
+            format!("⚠ Couldn't register {}", shortcut_display_name(&failed))
+        };
+        let error_item = MenuItem::with_id(app, "shortcut_error", &label, false, None::<&str>)?;
+        builder = builder.item(&error_item);
     }
 
     // Shortcut settings submenu
@@ -634,7 +649,17 @@ fn unregister_all_shortcuts(app: &AppHandle) {
     }
 }
 
-fn register_shortcut(app: &AppHandle, shortcut_str: &str) {
+fn shortcut_display_name(shortcut_str: &str) -> &'static str {
+    match shortcut_str {
+        "CommandOrControl+Shift+V" => "⌘ Shift + V",
+        "Control+Alt+V" => "⌃ Ctrl + Option + V",
+        _ => "⌥ Option + V",
+    }
+}
+
+/// Registering fails when another app already owns the key combination, so
+/// the caller has to tell the user rather than leave the popup silently dead.
+fn register_shortcut(app: &AppHandle, shortcut_str: &str) -> Result<(), String> {
     let shortcut = match shortcut_str {
         "Alt+V" => Shortcut::new(Some(Modifiers::ALT), Code::KeyV),
         "CommandOrControl+Shift+V" => Shortcut::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyV),
@@ -643,7 +668,7 @@ fn register_shortcut(app: &AppHandle, shortcut_str: &str) {
     };
 
     let app_handle = app.clone();
-    let _ = app.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, event| {
+    app.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, event| {
         if event.state != ShortcutState::Pressed {
             return;
         }
@@ -659,18 +684,43 @@ fn register_shortcut(app: &AppHandle, shortcut_str: &str) {
         if let Some(window) = _app.get_webview_window("main") {
             show_popup_at_cursor(&window);
         }
-    });
+    })
+    .map_err(|e| e.to_string())
+}
+
+/// Record a failed registration so the tray menu shows it. The tray icon is
+/// forced visible for this session, because with the icon hidden and the
+/// shortcut dead the user would have no way to reach the app at all. The
+/// hidden-icon preference itself is left as saved.
+fn report_shortcut_error(state: &AppState, shortcut_str: &str, error: &str) {
+    log::error!("Failed to register shortcut {shortcut_str}: {error}");
+    *lock_through_poison(&state.shortcut_error, "shortcut_error") = Some(shortcut_str.to_string());
+    if let Some(tray) = lock_through_poison(&state.tray_icon, "tray_icon").as_ref() {
+        let _ = tray.set_visible(true);
+    }
 }
 
 fn change_shortcut(app: &AppHandle, state: &AppState, new_shortcut: &str) {
+    let previous = lock_through_poison(&state.current_shortcut, "current_shortcut").clone();
     unregister_all_shortcuts(app);
-    *lock_through_poison(&state.current_shortcut, "current_shortcut") = new_shortcut.to_string();
-    register_shortcut(app, new_shortcut);
 
-    // Save to store
-    if let Ok(store) = app.store("store.json") {
-        let _ = store.set("shortcut", serde_json::json!(new_shortcut));
-        let _ = store.save();
+    match register_shortcut(app, new_shortcut) {
+        Ok(()) => {
+            *lock_through_poison(&state.current_shortcut, "current_shortcut") = new_shortcut.to_string();
+            *lock_through_poison(&state.shortcut_error, "shortcut_error") = None;
+
+            if let Ok(store) = app.store("store.json") {
+                let _ = store.set("shortcut", serde_json::json!(new_shortcut));
+                let _ = store.save();
+            }
+        }
+        Err(e) => {
+            // Keep the previous shortcut, both saved and working.
+            report_shortcut_error(state, new_shortcut, &e);
+            if let Err(e) = register_shortcut(app, &previous) {
+                log::error!("Failed to restore shortcut {previous}: {e}");
+            }
+        }
     }
 
     update_tray_menu(app, state);
@@ -1017,7 +1067,12 @@ pub fn run() {
                     "Alt+V".to_string()
                 }
             };
-            register_shortcut(app.handle(), &shortcut);
+            if let Err(e) = register_shortcut(app.handle(), &shortcut) {
+                if let Some(state) = app.try_state::<AppState>() {
+                    report_shortcut_error(&state, &shortcut, &e);
+                    update_tray_menu(app.handle(), &state);
+                }
+            }
 
             // Setup window blur handler
             if let Some(window) = app.get_webview_window("main") {
