@@ -43,26 +43,44 @@ export default async function OgImage({
         display: "flex",
         gap: 64,
         height: "100%",
-        padding: "0 90px",
+        /* 中央に寄せる。左揃えだと副題の長い英語版で右が詰まる */
+        justifyContent: "center",
         width: "100%",
       }}
     >
+      {/* icon.png は絵の左右に 300px 換算で 28px の地がある。左側だけ打ち消して、
+          見た目の左右の余白を揃える */}
       {/* biome-ignore lint/performance/noImgElement: next/image is not available in ImageResponse */}
-      <img alt="" height={300} src={iconSrc} width={300} />
+      <img alt="" height={300} src={iconSrc} style={{ marginLeft: -28 }} width={300} />
       <div style={{ display: "flex", flexDirection: "column" }}>
         <div
           style={{
             color: NAVY,
             fontSize: 128,
             letterSpacing: -3,
+            /* 128px だと M の左の字形の余白が見えて、説明文より右から始まって見える */
+            marginLeft: -7,
           }}
         >
           Macopy
         </div>
-        <div style={{ color: INK_2, fontSize: 38, marginTop: 18 }}>
-          {isJa
-            ? "直前の10件を、ショートカット1つで"
-            : "Your last ten copies, one shortcut away"}
+        {/* 1行だと題名より大きく右へはみ出し、その軽さで全体が左に寄って見えるので2行に折る */}
+        <div
+          style={{
+            color: INK_2,
+            display: "flex",
+            flexDirection: "column",
+            fontSize: 38,
+            lineHeight: 1.4,
+            marginTop: 18,
+          }}
+        >
+          {(isJa
+            ? ["直前の10件を、", "ショートカット1つで"]
+            : ["Your last ten copies,", "one shortcut away"]
+          ).map((line) => (
+            <div key={line}>{line}</div>
+          ))}
         </div>
       </div>
     </div>,
