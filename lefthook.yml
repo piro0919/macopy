@@ -1,0 +1,31 @@
+# lp/ は別パッケージ（Next.js）で、依存も設定も別に持つので ESLint と Stylelint は掛けない。
+# Rust 側（src/）は cargo の領分で、ここでは扱わない。
+pre-commit:
+  parallel: true
+  commands:
+    eslint:
+      glob: "**/*.{ts,tsx}"
+      exclude:
+        - "lp/**"
+        - "src/**"
+      run: npx eslint --fix {staged_files}
+      stage_fixed: true
+    prettier:
+      glob: "**/*"
+      run: npx prettier --ignore-unknown --write {staged_files}
+      stage_fixed: true
+    secretlint:
+      glob: "**/*"
+      run: npx secretlint --maskSecrets {staged_files}
+    stylelint:
+      glob: "**/*.css"
+      exclude:
+        - "lp/**"
+      run: npx stylelint --fix {staged_files}
+      stage_fixed: true
+    typescript:
+      run: npx tsc --noEmit
+commit-msg:
+  scripts:
+    "commitlint.sh":
+      runner: bash

@@ -16,14 +16,14 @@
 
 ## 🚀 Features
 
-| Feature                | Description                                        |
-| ---------------------- | -------------------------------------------------- |
-| 📋 Clipboard History   | Tracks latest 10 items (text or image)             |
+| Feature               | Description                                        |
+| --------------------- | -------------------------------------------------- |
+| 📋 Clipboard History  | Tracks latest 10 items (text or image)             |
 | 🖼 Image Paste Support | Copy and reuse image items easily                  |
-| 🧠 App Detection       | AppleScript-based active app tracking              |
+| 🧠 App Detection      | AppleScript-based active app tracking              |
 | ⚡️ Global Shortcut    | Quickly toggle the popup with a hotkey             |
-| 🧲 Paste Automation    | Automatically simulates ⌘+V into the frontmost app |
-| 🧃 Tray Menu           | Access recent items, settings, and quit from tray  |
+| 🧲 Paste Automation   | Automatically simulates ⌘+V into the frontmost app |
+| 🧃 Tray Menu          | Access recent items, settings, and quit from tray  |
 | 🛠 Persistent Settings | Shortcut, tray visibility saved locally            |
 
 ---

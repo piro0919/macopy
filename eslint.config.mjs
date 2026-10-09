@@ -2,12 +2,9 @@ import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
 import tsParser from "@typescript-eslint/parser";
 import css from "eslint-plugin-css";
-import cssModules from "eslint-plugin-css-modules";
-import ext from "eslint-plugin-ext";
 import perfectionist from "eslint-plugin-perfectionist";
 import promise from "eslint-plugin-promise";
 import unusedImports from "eslint-plugin-unused-imports";
-import writeGoodComments from "eslint-plugin-write-good-comments";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { fixupPluginRules } from "@eslint/compat";
@@ -52,8 +49,6 @@ const eslintConfig = [
     },
     plugins: {
       css,
-      "css-modules": cssModules,
-      ext,
       filenames: fixupPluginRules(filenamesPlugin),
       import: importPlugin,
       perfectionist,
@@ -61,7 +56,6 @@ const eslintConfig = [
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
       "unused-imports": unusedImports,
-      "write-good-comments": writeGoodComments,
     },
     rules: {
       "@typescript-eslint/consistent-type-definitions": ["error", "type"],
@@ -77,8 +71,6 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "error",
       "@typescript-eslint/promise-function-async": "error",
       "@typescript-eslint/strict-boolean-expressions": "off",
-      "css-modules/no-undef-class": [2, { camelCase: true }],
-      "ext/lines-between-object-properties": ["error", "never"],
       "filenames/match-exported": ["error", ["camel", "kebab", "pascal"]],
       "filenames/match-regex": "off",
       "filenames/no-index": "off",
@@ -239,7 +231,6 @@ const eslintConfig = [
           varsIgnorePattern: "^_",
         },
       ],
-      "write-good-comments/write-good-comments": "error",
     },
   },
 ];

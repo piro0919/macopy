@@ -46,10 +46,12 @@ npm run vite:dev
 ## アーキテクチャ
 
 ### IPC 通信
+
 - Tauri の `invoke` API でフロントエンド ↔ Rust バックエンド間を通信
 - `@tauri-apps/api` パッケージを使用
 
 ### 主要機能
+
 1. **クリップボード監視**: Rust でシステムレベル監視（macOS NSPasteboard API）
 2. **履歴管理**: Tauri の設定ストアで最新10アイテムを永続化
 3. **ペースト自動化**: AppleScript で Command+V をシミュレート

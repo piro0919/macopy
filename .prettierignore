@@ -1,0 +1,20 @@
+# Output
+dist
+lp/.next
+src/target
+
+# Static
+.lefthook
+*.icns
+*.ico
+*.png
+*.ttf
+*.woff2
+
+# Configs & deps
+node_modules
+package-lock.json
+src/Cargo.lock
+
+# Env
+.env*

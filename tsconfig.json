@@ -6,17 +6,11 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "paths": {
-      "@/*": [
-        "renderer/*"
-      ]
+      "@/*": ["renderer/*"]
     },
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2020"
   },
-  "include": [
-    "main",
-    "renderer",
-    "shared"
-  ]
+  "include": ["main", "renderer", "shared"]
 }
