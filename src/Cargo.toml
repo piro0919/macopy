@@ -20,7 +20,7 @@ tauri = { version = "2.12.1", features = ["tray-icon", "macos-private-api"] }
 tauri-plugin-clipboard-manager = "2.4.1"
 tauri-plugin-global-shortcut = "2.4.0"
 tauri-plugin-store = "2.5.0"
-tauri-plugin-shell = "2.4.0"
+tauri-plugin-shell = "2.4.1"
 tauri-plugin-single-instance = "2.5.2"
 tauri-plugin-autostart = "2.7.0"
 serde = { version = "1.0.229", features = ["derive"] }
