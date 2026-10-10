@@ -85,7 +85,9 @@ export default async function Page({ params }: PageProps) {
                 <span className="font-mono text-sm text-steel">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h2 className="mt-3 font-display font-bold text-base">{item.title}</h2>
+                <h2 className="mt-3 font-display font-bold text-base">
+                  {item.title}
+                </h2>
                 <p className="mt-2.5 text-ink-2 text-sm leading-relaxed">
                   {item.body}
                 </p>
@@ -124,6 +126,10 @@ export default async function Page({ params }: PageProps) {
         <Link className="underline" href="/privacy">
           {t("footer.privacy")}
         </Link>
+        <span className="px-2">·</span>
+        <a className="underline" href="https://buymeacoffee.com/piro0919">
+          Buy Me a Coffee
+        </a>
       </footer>
     </>
   );
