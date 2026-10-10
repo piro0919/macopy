@@ -12,6 +12,7 @@ import filenamesPlugin from "eslint-plugin-filenames";
 import reactPlugin from "eslint-plugin-react";
 import importPlugin from "eslint-plugin-import";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
+import magicNumbers from "@piro0919/eslint-config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -233,6 +234,8 @@ const eslintConfig = [
       ],
     },
   },
+  // 名前の無い数字を警告する（全リポジトリで共有する piro0919/eslint-config）
+  ...magicNumbers(),
 ];
 
 export default eslintConfig;
