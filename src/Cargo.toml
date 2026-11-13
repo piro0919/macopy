@@ -19,7 +19,7 @@ tauri-build = { version = "2.7.4", features = [] }
 tauri = { version = "2.12.5", features = ["tray-icon", "macos-private-api"] }
 tauri-plugin-clipboard-manager = "2.5.0"
 tauri-plugin-global-shortcut = "2.4.1"
-tauri-plugin-store = "2.5.0"
+tauri-plugin-store = "2.5.1"
 tauri-plugin-shell = "2.6.0"
 tauri-plugin-single-instance = "2.5.5"
 tauri-plugin-autostart = "2.7.0"
