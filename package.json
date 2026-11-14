@@ -42,7 +42,7 @@
     "eslint-plugin-unused-imports": "4.4.1",
     "knip": "^5.88.1",
     "lefthook": "1.13.6",
-    "prettier": "3.9.10",
+    "prettier": "3.10.0",
     "secretlint": "9.3.4",
     "stylelint": "16.26.1",
     "stylelint-config-css-modules": "4.6.0",
